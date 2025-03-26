@@ -45,7 +45,6 @@ function App() {
   const [code, setCode] = useState<string>(exampleComponent);
   const [error, setError] = useState<string | null>(null);
   const [currentComponent, setCurrentComponent] = useState<React.ComponentType | null>(null);
-  const [isPrinting, setIsPrinting] = useState<boolean>(false);
   const codePreviewRef = useRef<HTMLDivElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<ReactDOM.Root | null>(null);
@@ -114,14 +113,17 @@ function App() {
         body * {
           visibility: hidden;
         }
-        #print-container, #print-container * {
-          visibility: visible;
-        }
         #print-container {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
+          visibility: visible !important;
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        #print-container * {
+          visibility: visible !important;
         }
       }
     `;
@@ -589,41 +591,44 @@ function App() {
       );
     }
   };
+  // Function to handle printing without affecting the main UI
   const handlePrint = async () => {
     if (!currentComponent || !printRootRef.current) return;
     
     try {
-      // Set printing mode to true
-      setIsPrinting(true);
+      // Store the component before printing
+      const componentToRender = currentComponent;
       
       // Render the component in the print container
-      printRootRef.current.render(React.createElement(currentComponent));
+      printRootRef.current.render(React.createElement(componentToRender));
       
+      // CSS in @media print will handle visibility during print
       // Open print dialog after a short delay to ensure rendering is complete
       setTimeout(() => {
         window.print();
         
-        // Reset printing mode after printing dialog is closed
+        // Reset after printing dialog is closed
         setTimeout(() => {
-          setIsPrinting(false);
+          console.log("Print operation complete");
         }, 500);
       }, 300);
     } catch (err) {
       console.error('Error preparing for print:', err);
       setError(`Error preparing for print: ${err instanceof Error ? err.message : String(err)}`);
-      setIsPrinting(false);
     }
   };
   // Determine if we should show the app UI or just the print view
-  const showAppUI = !isPrinting;
+  const showAppUI = true; // Always show the app UI
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       minHeight: '100vh',
+      height: '100vh', /* Force full height */
       fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       color: '#1a202c',
-      background: '#f7fafc'
+      background: '#f7fafc',
+      overflow: 'hidden' /* Prevent body scroll */
     }}>
       {showAppUI && (
         <>
@@ -632,7 +637,8 @@ function App() {
             color: 'white',
             padding: '1.5rem',
             textAlign: 'center',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            flexShrink: 0 /* Prevent header from shrinking */
           }}>
             <h1 style={{ margin: '0 0 0.5rem', fontSize: '2.25rem', fontWeight: 700 }}>Claude Artifact to PDF Converter</h1>
             <p style={{ margin: 0, fontSize: '1.125rem', opacity: 0.9 }}>
@@ -642,19 +648,22 @@ function App() {
           <main style={{
             display: 'flex',
             flexDirection: 'row',
-            flex: 1,
+            flex: '1 0 auto',
             padding: '1.5rem',
             gap: '1.5rem',
             maxWidth: '1600px',
             margin: '0 auto',
             width: '100%',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            minHeight: '0',
+            overflow: 'hidden' /* Prevent main content from causing scroll */
           }}>
             <div style={{ 
               width: '45%', 
               minWidth: '400px',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              overflow: 'hidden' /* Contain any overflow */
             }}>
               <h2 style={{ 
                 margin: '0 0 1rem', 
@@ -665,7 +674,7 @@ function App() {
                 Claude Artifact Code
               </h2>
               <div style={{ 
-                height: 'calc(100vh - 240px)',
+                height: 'calc(100vh - 320px)', /* Adjusted to leave room for header, footer, and margins */
                 position: 'relative',
                 border: '1px solid #e2e8f0',
                 borderRadius: '0.5rem',
@@ -753,7 +762,7 @@ function App() {
                 Component Preview
               </h2>
               <div style={{ 
-                height: 'calc(100vh - 240px)',
+                height: 'calc(100vh - 320px)', /* Adjusted to leave room for header, footer, and margins */
                 border: '1px solid #e2e8f0',
                 borderRadius: '0.5rem',
                 overflow: 'auto',
@@ -773,7 +782,8 @@ function App() {
             borderTop: '1px solid #e2e8f0',
             backgroundColor: 'white',
             fontSize: '0.875rem',
-            color: '#4a5568'
+            color: '#4a5568',
+            flexShrink: 0 /* Prevent footer from shrinking */
           }}>
             <p style={{ margin: 0 }}>
               Powered by <a 
@@ -789,6 +799,9 @@ function App() {
                 Genvise
               </a>
             </p>
+            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#718096' }}>
+              Your code and outputs are never stored or processed on our servers and remain solely on your computer.
+            </p>
           </footer>
         </>
       )}
@@ -797,9 +810,12 @@ function App() {
       <div id="print-container" ref={componentRef} style={{
         width: '100%',
         minHeight: '100vh',
-        padding: isPrinting ? '0' : '0', // No padding when printing
+        padding: '1.5rem',
         backgroundColor: 'white',
-        display: isPrinting ? 'block' : 'none' // Only show when printing
+        position: 'absolute',
+        left: '-9999px',
+        top: 0,
+        visibility: 'hidden' /* Hidden by default, print CSS will make it visible */
       }}>
         {/* The component will be rendered here for printing */}
       </div>

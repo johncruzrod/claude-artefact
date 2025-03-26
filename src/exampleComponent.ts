@@ -207,6 +207,73 @@ function ClaudeTutorial() {
           </Box>
         </Box>
 
+        {/* Step 5 - NEW STEP */}
+        <Box sx={{ mb: 4, pl: 2, borderLeft: '2px solid #5850EC' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ 
+              width: 28, 
+              height: 28, 
+              borderRadius: '50%', 
+              bgcolor: '#5850EC', 
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              mr: 2
+            }}>
+              5
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Customise your PDF output
+            </Typography>
+          </Box>
+          
+          <Box sx={{ pl: 5, mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
+              You can customise how your PDF looks by adjusting the print settings:
+            </Typography>
+            
+            <Card variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
+              <Box sx={{ 
+                width: '100%',
+                height: 'auto',
+                backgroundImage: 'url(/printartefact.png)',
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                pt: '75%' // 4:3 aspect ratio
+              }} />
+            </Card>
+            
+            <Typography variant="body2" sx={{ mb: 1, color: '#4a5568' }}>
+              For best results, adjust these settings in the print dialog:
+            </Typography>
+            
+            <ul style={{ margin: 0, paddingLeft: '20px', color: '#4a5568', marginBottom: '12px' }}>
+              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
+                <strong>Page Size</strong>: Choose A4, Letter, or other sizes based on your needs
+              </li>
+              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
+                <strong>Scale</strong>: Adjust to fit content appropriately on the page
+              </li>
+              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
+                <strong>Orientation</strong>: Switch between portrait and landscape based on content
+              </li>
+              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
+                <strong>Margins</strong>: Select "None" or "Minimal" for edge-to-edge content
+              </li>
+              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
+                <strong>Headers and Footers</strong>: Disable these for a cleaner output
+              </li>
+            </ul>
+            
+            <Typography variant="body2" sx={{ color: '#4a5568' }}>
+              The preview in the print dialog will help you see how your PDF will look before saving.
+            </Typography>
+          </Box>
+        </Box>
+
         {/* Supported Libraries */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: '#2d3748' }}>
