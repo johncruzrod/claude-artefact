@@ -12,7 +12,7 @@ import * as math from 'mathjs';
 import './App.css';
 import { exampleComponent } from './exampleComponent';
 
-// Libraries we'll make available to user components
+// We'll make these Material UI components available
 import { 
   Button, 
   Container, 
@@ -27,6 +27,47 @@ import {
   Divider 
 } from '@mui/material';
 
+/* 
+   Placeholder implementations for "@/components/ui/card". 
+   These are minimal <div>/<h3> etc. to avoid runtime errors 
+   if user code references those imports. They won't have 
+   the real styling or logic, just placeholders.
+*/
+const MyCustomCard = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={className || ''} {...rest}>{children}</div>
+);
+
+const MyCustomCardHeader = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={className || ''} {...rest}>{children}</div>
+);
+
+const MyCustomCardTitle = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
+  <h3 className={className || ''} {...rest}>{children}</h3>
+);
+
+const MyCustomCardContent = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={className || ''} {...rest}>{children}</div>
+);
+
+const MyCustomCardFooter = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={className || ''} {...rest}>{children}</div>
+);
+
+const MyCustomCardDescription = ({ children, className, ...rest }: React.HTMLAttributes<HTMLParagraphElement>) => (
+  <p className={className || ''} {...rest}>{children}</p>
+);
+
+// Combine them into one object mapped to "@/components/ui/card"
+const MyCardModule = {
+  Card: MyCustomCard,
+  CardHeader: MyCustomCardHeader,
+  CardTitle: MyCustomCardTitle,
+  CardContent: MyCustomCardContent,
+  CardFooter: MyCustomCardFooter,
+  CardDescription: MyCustomCardDescription,
+};
+
+// Our available modules
 const availableModules = {
   'react': React,
   '@mui/material': {
@@ -40,13 +81,23 @@ const availableModules = {
   'd3': d3,
   'three': THREE,
   'tone': Tone,
-  'mathjs': math
+  'mathjs': math,
+
+  // The crucial addition: placeholders for "@/components/ui/card"
+  '@/components/ui/card': MyCardModule
 };
 
 function App() {
   const [code, setCode] = useState<string>(exampleComponent);
   const [error, setError] = useState<string | null>(null);
   const [currentComponent, setCurrentComponent] = useState<React.ComponentType | null>(null);
+
+  // We'll store a warning message if the user code references "@/components/ui/card"
+  const [placeholderWarning, setPlaceholderWarning] = useState<string | null>(null);
+
+  // States to show "copied!" confirmation
+  const [hintCopied, setHintCopied] = useState(false);
+  const [pdfTipCopied, setPdfTipCopied] = useState(false);
 
   const codePreviewRef = useRef<HTMLDivElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
@@ -55,6 +106,33 @@ function App() {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // The text we want the user to copy for removing @/components/ui/card
+  const removalHintText = `Please create the artifact as is, but without @/components/ui/card`;
+
+  // The text we want the user to copy for PDF print tip
+  const pdfBreakTipText = `Can you also make it so that when printed each individual component does not break on the printed pages?`;
+
+  // Function to copy the removal hint text
+  const handleCopyHint = () => {
+    navigator.clipboard.writeText(removalHintText).then(() => {
+      setHintCopied(true);
+      setTimeout(() => setHintCopied(false), 2000); // Hide after 2s
+    }).catch(err => {
+      console.error('Failed to copy text:', err);
+    });
+  };
+
+  // Function to copy the PDF tip text
+  const handleCopyPdfTip = () => {
+    navigator.clipboard.writeText(pdfBreakTipText).then(() => {
+      setPdfTipCopied(true);
+      setTimeout(() => setPdfTipCopied(false), 2000); // Hide after 2s
+    }).catch(err => {
+      console.error('Failed to copy text:', err);
+    });
+  };
+
+  // Create React roots once on mount
   useEffect(() => {
     let previewRoot: ReactDOM.Root | null = null;
     let printRoot: ReactDOM.Root | null = null;
@@ -96,6 +174,7 @@ function App() {
     };
   }, []);
 
+  // Inject a little print CSS
   useEffect(() => {
     const style = document.createElement('style');
     style.type = 'text/css';
@@ -125,6 +204,7 @@ function App() {
     };
   }, []);
 
+  // Re-render on code changes
   useEffect(() => {
     if (rootRef.current) {
       try {
@@ -136,6 +216,7 @@ function App() {
     }
   }, [code]);
 
+  // Load sample code from e.g. public/sample1.txt, public/sample2.txt, ...
   const loadSampleCode = async (sampleNumber: number) => {
     try {
       const response = await fetch(`/sample${sampleNumber}.txt`);
@@ -144,13 +225,17 @@ function App() {
       }
       const sampleCode = await response.text();
       setCode(sampleCode);
+      setError(null);
+      setPlaceholderWarning(null);
     } catch (err) {
       setError(String(err));
     }
   };
-  
 
+  // Preprocess user code: remove/transform imports
   const preprocessUserCode = (sourceCode: string): string => {
+    setPlaceholderWarning(null);
+
     const userImports = new Set<string>();
     const importRegex = /import\s+(?:{[^}]*}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
     let match;
@@ -215,10 +300,29 @@ function App() {
       );
     }
 
-    // Remove leftover import lines
+    // If the user tries to import from "@/components/ui/card", 
+    // we do a transform and show a user-friendly warning
+    if (userImports.has('@/components/ui/card')) {
+      setPlaceholderWarning(
+        'We detected a custom library import ("@/components/ui/card") that we cannot fully style.\n\n' +
+        'Your component will still render, but it may not look correct.\n\n' +
+        'To fix this, please ask Claude to remove "@/components/ui/card" references by saying:\n'
+      );
+
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/card['"];?/g,
+        'const { $1 } = customCard;'
+      );
+    }
+
+    // Remove any leftover import lines
     transformedCode = transformedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
+
     // Remove export default lines
-    transformedCode = transformedCode.replace(/export\s+default\s+([A-Za-z0-9_]+);?/g, '// exporting $1');
+    transformedCode = transformedCode.replace(
+      /export\s+default\s+([A-Za-z0-9_]+);?/g,
+      '// exporting $1'
+    );
 
     return transformedCode;
   };
@@ -226,8 +330,8 @@ function App() {
   const renderComponent = (root: ReactDOM.Root) => {
     try {
       setError(null);
-      let componentName: string | null = null;
 
+      let componentName: string | null = null;
       const arrowMatch = code.match(
         /const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/
       );
@@ -249,8 +353,7 @@ function App() {
 
       const processedCode = preprocessUserCode(code);
 
-      let transformedCode: string;
-      transformedCode = Babel.transform(processedCode, {
+      const transformedCode = Babel.transform(processedCode, {
         presets: ['react'],
         plugins: [
           function() {
@@ -271,7 +374,7 @@ function App() {
         filename: 'usercode.jsx'
       }).code || '';
 
-      let componentExtractionCode;
+      let componentExtractionCode: string;
       if (componentName) {
         componentExtractionCode = `
           try {
@@ -315,6 +418,9 @@ function App() {
         const Tone = toneLib;
         const math = mathLib;
 
+        // For "@/components/ui/card" imports
+        const customCard = cardLib;
+
         const {
           Button, Container, Card, Grid, Box,
           Typography, TextField, Paper, List, ListItem, Divider
@@ -328,7 +434,6 @@ function App() {
         }
       `;
 
-      let UserComponent: React.ComponentType<any>;
       const execFunc = new Function(
         'reactLib',
         'reactDOMLib',
@@ -340,6 +445,7 @@ function App() {
         'threeLib',
         'toneLib',
         'mathLib',
+        'cardLib',
         wrappedCode
       );
 
@@ -351,7 +457,7 @@ function App() {
         clearInterval: clearInterval
       };
 
-      UserComponent = execFunc.call(
+      const UserComponent = execFunc.call(
         execContext,
         availableModules['react'],
         availableModules['react-dom'],
@@ -362,7 +468,8 @@ function App() {
         availableModules['d3'],
         availableModules['three'],
         availableModules['tone'],
-        availableModules['mathjs']
+        availableModules['mathjs'],
+        availableModules['@/components/ui/card']
       );
 
       if (!UserComponent || typeof UserComponent !== 'function') {
@@ -462,17 +569,22 @@ function App() {
       root.render(
         <div style={{ padding: '20px', color: 'red' }}>
           <h3>Rendering Error</h3>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>{err instanceof Error ? err.message : String(err)}</pre>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>
+            {err instanceof Error ? err.message : String(err)}
+          </pre>
         </div>
       );
     }
   };
 
+  // Print logic
   const handlePrint = async () => {
     if (!currentComponent || !printRootRef.current) return;
     try {
       const componentToRender = currentComponent;
+      // Render in the hidden print container
       printRootRef.current.render(React.createElement(componentToRender));
+      // Give it a short delay, then print
       setTimeout(() => {
         window.print();
         setTimeout(() => {
@@ -485,11 +597,9 @@ function App() {
     }
   };
 
-  // Only style the .app-header, .app-footer, or custom classes in our CSS. 
-  // Do not style <header> or <footer> globally.
   const showAppUI = true;
 
-  const sampleButtonStyle = {
+  const sampleButtonStyle: React.CSSProperties = {
     padding: '0.75rem 1rem',
     backgroundColor: '#4A5568',
     color: 'white',
@@ -501,6 +611,44 @@ function App() {
     transition: 'background-color 0.2s ease-in-out',
     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
   };
+
+  // Add this to your state declarations at the top of the App component
+  const [leftPanelWidth, setLeftPanelWidth] = useState(35); // Changed from 40 to 35
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Update the event handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  // Add this useEffect to handle the mouse move and up events
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      const container = document.querySelector('.main-container');
+      if (container) {
+        const containerRect = container.getBoundingClientRect();
+        const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+        setLeftPanelWidth(Math.min(Math.max(newWidth, 20), 80));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   return (
     <div
@@ -527,13 +675,47 @@ function App() {
             height: auto !important;
           }
         }
+        .resize-handle {
+          width: 8px;
+          cursor: col-resize;
+          background: #e2e8f0;
+          margin: 0 -4px;
+          position: relative;
+          z-index: 10;
+          transition: background 0.2s;
+          touch-action: none; /* Prevent touch scrolling while dragging */
+        }
+        .resize-handle:hover {
+          background: #cbd5e1;
+        }
+        .resize-handle.active {
+          background: #94a3b8;
+        }
+        ${isDragging ? `
+          body * {
+            cursor: col-resize !important;
+            user-select: none !important;
+          }
+        ` : ''}
       `}</style>
 
       {showAppUI && (
         <>
-          <div className="app-header">
-            <h1>Claude Artifact to PDF Converter</h1>
-            <p>Paste your Claude artifact code, see it rendered, and download it as a PDF</p>
+          {/* Our custom "header" in the app */}
+          <div className="app-header" style={{ padding: '0.5rem 0' }}>
+            <h1 style={{ 
+              margin: '0 0 0.25rem 0',  // Further reduced margin
+              fontSize: '1.5rem'         // Even smaller font size
+            }}>
+              Claude Artifact to PDF Converter
+            </h1>
+            <p style={{ 
+              margin: 0,                 // Removed all margins
+              fontSize: '0.8rem',        // Smaller font size
+              color: '#fff'             // Changed from '#666' to '#fff'
+            }}>
+              Paste your Claude artifact code, see it rendered, and download it as a PDF
+            </p>
           </div>
 
           <main
@@ -541,7 +723,7 @@ function App() {
             style={{
               display: 'flex',
               flexDirection: 'row',
-              flex: '1 0 auto',
+              flex: '1',
               padding: '1.5rem',
               gap: '1.5rem',
               maxWidth: '1600px',
@@ -555,8 +737,8 @@ function App() {
             <div
               className="left-panel"
               style={{
-                width: '45%',
-                minWidth: '400px',
+                width: `${leftPanelWidth}%`,
+                minWidth: '350px',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden'
@@ -565,6 +747,98 @@ function App() {
               <h2 style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
                 Claude Artifact Code
               </h2>
+
+              <div
+                style={{
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '0.5rem',
+                  backgroundColor: '#f8fafc'
+                }}
+              >
+                <p style={{ 
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '0.75rem',
+                  color: '#1a202c',
+                  fontWeight: 600
+                }}>
+                  Tip: For best results when saving as PDF, tell Claude:
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <button
+                    onClick={handleCopyPdfTip}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      backgroundColor: pdfTipCopied ? '#48BB78' : '#4A5568',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      transition: 'background-color 0.2s ease-in-out'
+                    }}
+                  >
+                    Copy
+                  </button>
+                  <span style={{ fontSize: '0.75rem', color: '#4A5568' }}>
+                    {pdfTipCopied ? 'Copied!' : '"Can you also make it so that when printed each individual component does not break on the printed pages?"'}
+                  </span>
+                </div>
+              </div>
+
+              {/* If we have a placeholder warning, show it above the code box */}
+              {placeholderWarning && (
+                <div
+                  style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem',
+                    border: '1px solid #fed7d7',
+                    borderRadius: '0.375rem',
+                    backgroundColor: '#fff5f5',
+                    color: '#c62828',
+                    fontSize: '0.875rem',
+                    whiteSpace: 'pre-line'
+                  }}
+                >
+                  {placeholderWarning}
+                  <div
+                    style={{
+                      backgroundColor: '#fefefe',
+                      border: '1px solid #ddd',
+                      padding: '0.5rem',
+                      borderRadius: '0.25rem',
+                      marginTop: '0.5rem',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <code style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      {removalHintText}
+                    </code>
+                    <button
+                      onClick={handleCopyHint}
+                      style={{
+                        marginLeft: '0.5rem',
+                        padding: '0.25rem 0.5rem',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        backgroundColor: '#D97757',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '0.25rem'
+                      }}
+                    >
+                      Copy
+                    </button>
+                    {hintCopied && (
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#16a34a' }}>
+                        Copied!
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div
                 style={{
@@ -580,7 +854,11 @@ function App() {
                 <textarea
                   ref={textareaRef}
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => {
+                    setCode(e.target.value);
+                    setError(null);
+                    setPlaceholderWarning(null);
+                  }}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -691,18 +969,33 @@ function App() {
             </div>
 
             <div
+              className={`resize-handle ${isDragging ? 'active' : ''}`}
+              onMouseDown={handleMouseDown}
+              style={{
+                width: '8px',
+                backgroundColor: isDragging ? '#94a3b8' : '#e2e8f0',
+                cursor: 'col-resize',
+                margin: '0 -4px',
+                position: 'relative',
+                zIndex: 10,
+                transition: 'background-color 0.2s'
+              }}
+            />
+
+            <div
               className="right-panel"
               style={{
-                width: '55%',
-                minWidth: '500px'
+                width: `${100 - leftPanelWidth}%`,
+                minWidth: '350px'
               }}
             >
               <h2 style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
                 Component Preview
               </h2>
+
               <div
                 style={{
-                  height: 'calc(100vh - 320px)',
+                  height: 'calc(100vh - 240px)',
                   border: '1px solid #e2e8f0',
                   borderRadius: '0.5rem',
                   overflow: 'auto',
@@ -712,7 +1005,6 @@ function App() {
                 <div
                   ref={codePreviewRef}
                   style={{
-                    // Unset all inherited styles so user code uses only its own
                     all: 'unset',
                     display: 'block',
                     boxSizing: 'border-box'
@@ -722,6 +1014,7 @@ function App() {
             </div>
           </main>
 
+          {/* Our custom app footer */}
           <div
             className="app-footer"
             style={{
@@ -756,6 +1049,7 @@ function App() {
         </>
       )}
 
+      {/* Hidden print container */}
       <div
         id="print-container"
         ref={componentRef}
@@ -770,7 +1064,7 @@ function App() {
           visibility: 'hidden'
         }}
       >
-        {/* The component will be rendered here for printing */}
+        {/* The user's component for printing */}
       </div>
     </div>
   );
