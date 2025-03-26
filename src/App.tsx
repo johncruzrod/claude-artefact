@@ -10,11 +10,19 @@ import * as THREE from 'three';
 import * as Tone from 'tone';
 import * as math from 'mathjs';
 import './App.css';
+
+// Import the actual ShadCN components using relative paths
+import { Card as ShadcnCard, CardHeader as ShadcnCardHeader, CardFooter as ShadcnCardFooter, 
+  CardTitle as ShadcnCardTitle, CardDescription as ShadcnCardDescription, 
+  CardContent as ShadcnCardContent } from "./components/ui/card";
+import { Button as ShadcnButton } from "./components/ui/button";
+import { Badge as ShadcnBadge } from "./components/ui/badge";
+
 // We'll make these Material UI components available
 import { 
-  Button, 
+  Button as MuiButton, 
   Container, 
-  Card, 
+  Card as MuiCard, 
   Grid, 
   Box, 
   Typography, 
@@ -24,45 +32,40 @@ import {
   ListItem,
   Divider 
 } from '@mui/material';
-/* 
-   Placeholder implementations for "@/components/ui/card". 
-   These are minimal <div>/<h3> etc. to avoid runtime errors 
-   if user code references those imports. They won't have 
-   the real styling or logic, just placeholders.
-*/
-const MyCustomCard = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={className || ''} {...rest}>{children}</div>
-);
-const MyCustomCardHeader = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={className || ''} {...rest}>{children}</div>
-);
-const MyCustomCardTitle = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-  <h3 className={className || ''} {...rest}>{children}</h3>
-);
-const MyCustomCardContent = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={className || ''} {...rest}>{children}</div>
-);
-const MyCustomCardFooter = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={className || ''} {...rest}>{children}</div>
-);
-const MyCustomCardDescription = ({ children, className, ...rest }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p className={className || ''} {...rest}>{children}</p>
-);
-// Combine them into one object mapped to "@/components/ui/card"
-const MyCardModule = {
-  Card: MyCustomCard,
-  CardHeader: MyCustomCardHeader,
-  CardTitle: MyCustomCardTitle,
-  CardContent: MyCustomCardContent,
-  CardFooter: MyCustomCardFooter,
-  CardDescription: MyCustomCardDescription,
+
+// Create module objects for ShadCN paths - using the actual components now
+const ButtonModule = {
+  Button: ShadcnButton
 };
+
+const BadgeModule = {
+  Badge: ShadcnBadge
+};
+
+const CardModule = {
+  Card: ShadcnCard,
+  CardHeader: ShadcnCardHeader, 
+  CardFooter: ShadcnCardFooter,
+  CardTitle: ShadcnCardTitle,
+  CardDescription: ShadcnCardDescription,
+  CardContent: ShadcnCardContent
+};
+
 // Our available modules
 const availableModules = {
   'react': React,
   '@mui/material': {
-    Button, Container, Card, Grid, Box, 
-    Typography, TextField, Paper, List, ListItem, Divider,
+    Button: MuiButton, 
+    Container, 
+    Card: MuiCard, 
+    Grid, 
+    Box, 
+    Typography, 
+    TextField, 
+    Paper, 
+    List, 
+    ListItem, 
+    Divider
   },
   'react-dom': ReactDOM,
   'lucide-react': LucideIcons,
@@ -72,9 +75,12 @@ const availableModules = {
   'three': THREE,
   'tone': Tone,
   'mathjs': math,
-  // The crucial addition: placeholders for "@/components/ui/card"
-  '@/components/ui/card': MyCardModule
+  // ShadCN/UI components with our actual implementations
+  '@/components/ui/card': CardModule,
+  '@/components/ui/button': ButtonModule,
+  '@/components/ui/badge': BadgeModule
 };
+
 function App() {
   const [code, setCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -286,19 +292,35 @@ function App() {
         '// math is available as math'
       );
     }
-    // If the user tries to import from "@/components/ui/card", 
-    // we do a transform and show a user-friendly warning
+    // If the user tries to import from "@/components/ui/card"
     if (userImports.has('@/components/ui/card')) {
-      setPlaceholderWarning(
-        'We detected a custom library import ("@/components/ui/card") that we cannot fully style.\n\n' +
-        'Your component will still render, but it may not look correct.\n\n' +
-        'To fix this, please ask Claude to remove "@/components/ui/card" references by saying:\n'
-      );
       transformedCode = transformedCode.replace(
         /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/card['"];?/g,
-        'const { $1 } = customCard;'
+        'const { $1 } = shadcnCard;'
       );
     }
+    
+    // ShadCN/UI imports handling
+    if (userImports.has('@/components/ui/button')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/button['"];?/g,
+        'const { $1 } = shadcnButton;'
+      );
+    }
+    if (userImports.has('@/components/ui/badge')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/badge['"];?/g,
+        'const { $1 } = shadcnBadge;'
+      );
+    }
+    if (userImports.has('@/components/ui/card')) {
+      setPlaceholderWarning(null); // Don't show warning for our supported components
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/card['"];?/g,
+        'const { $1 } = shadcnCard;'
+      );
+    }
+    
     // Remove any leftover import lines
     transformedCode = transformedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
     // Remove export default lines
@@ -378,6 +400,9 @@ function App() {
           throw new Error('No React component found in code');
         `;
       }
+      
+      // THIS IS THE FIX: Make shadcn components available before MUI components
+      // to avoid naming conflicts
       const wrappedCode = `
         const React = reactLib;
         const {
@@ -393,12 +418,19 @@ function App() {
         const THREE = threeLib;
         const Tone = toneLib;
         const math = mathLib;
-        // For "@/components/ui/card" imports
-        const customCard = cardLib;
+        
+        // For ShadCN/UI imports - MAKE THESE AVAILABLE FIRST with their proper structure
+        // Shadcn components are exported as named exports
+        const shadcnButton = shadcnButtonLib;
+        const shadcnBadge = shadcnBadgeLib;
+        const shadcnCard = shadcnCardLib;
+        
+        // NEW: Use renamed MUI components to avoid conflicts with shadcn
         const {
-          Button, Container, Card, Grid, Box,
+          Button: MuiButton, Container, Card: MuiCard, Grid, Box,
           Typography, TextField, Paper, List, ListItem, Divider
         } = mui;
+        
         try {
           ${transformedCode}
           ${componentExtractionCode}
@@ -406,6 +438,7 @@ function App() {
           throw err;
         }
       `;
+      
       const execFunc = new Function(
         'reactLib',
         'reactDOMLib',
@@ -417,7 +450,9 @@ function App() {
         'threeLib',
         'toneLib',
         'mathLib',
-        'cardLib',
+        'shadcnCardLib',
+        'shadcnButtonLib',
+        'shadcnBadgeLib',
         wrappedCode
       );
       const execContext: Record<string, any> = {
@@ -439,7 +474,9 @@ function App() {
         availableModules['three'],
         availableModules['tone'],
         availableModules['mathjs'],
-        availableModules['@/components/ui/card']
+        availableModules['@/components/ui/card'],
+        availableModules['@/components/ui/button'],
+        availableModules['@/components/ui/badge']
       );
       if (!UserComponent || typeof UserComponent !== 'function') {
         throw new Error('Component not found or not a valid function');
@@ -950,7 +987,8 @@ function App() {
                   style={{
                     display: 'block',
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    padding: '20px' // Add some padding for the preview
                   }}
                 />
               </div>
