@@ -1,0 +1,1483 @@
+FILE: .gitignore
+================================================================================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+================================================================================
+
+
+FILE: README.md
+================================================================================
+# React Component to PDF Converter
+
+A powerful web application that renders React components and converts them to PDF files with customisable options.
+
+## Features
+
+- Write or paste React component code in the integrated code editor
+- Real-time preview of the rendered component
+- Support for Material-UI components and Lucide icons
+- Customisable PDF generation options:
+  - Page size (A4, Letter, Legal)
+  - Orientation (Portrait, Landscape)
+  - Margin settings
+- Component name auto-detection
+- Comprehensive error reporting
+
+## Use Cases
+
+- Create branded invoices and documents
+- Generate proposals with consistent styling
+- Develop printable reports
+- Design marketing assets with React
+
+## Technologies Used
+
+- React + Vite
+- TypeScript
+- react-to-pdf (for PDF generation)
+- @uiw/react-textarea-code-editor (for code editing)
+- Material-UI (component library)
+- Lucide React (icon library)
+- Babel (for JSX transformation)
+- Tailwind CSS (for styling)
+
+## Getting Started
+
+1. Clone this repository
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
+4. Open your browser to the localhost URL displayed in the terminal
+
+## Usage
+
+1. Write or paste your React component code in the editor panel
+2. View the rendered component in the preview panel
+3. Select PDF options (page size, orientation, margins)
+4. Click "Generate PDF" to create and download a PDF of your component
+
+## Supported Libraries
+
+The application includes support for:
+- React (core features and hooks)
+- Material-UI components
+- Lucide React icons
+- Tailwind CSS classes
+
+## Component Requirements
+
+- Components should be defined as a function called with any name (the app will detect it)
+- Use standard React and JSX syntax
+- Import statements for React, Material-UI, and Lucide React are supported
+
+## Example Component
+
+```jsx
+import React from 'react';
+import { FileText, Code } from 'lucide-react';
+
+function InvoiceComponent() {
+  return (
+    <div className="p-8 max-w-4xl mx-auto bg-white">
+      <div className="flex justify-between mb-8">
+        <h1 className="text-2xl font-bold">Invoice</h1>
+        <div className="flex items-center">
+          <FileText className="mr-2" size={20} />
+          <span>Document #1234</span>
+        </div>
+      </div>
+      
+      <div className="border-t pt-4">
+        <p>Your well-styled invoice content here</p>
+      </div>
+    </div>
+  );
+}
+
+export default InvoiceComponent;
+```
+
+## Customisation
+
+This application can be extended to support:
+- Additional component libraries
+- More PDF customisation options
+- Custom PDF templates
+- Export in other formats
+
+## License
+
+MIT
+
+## Acknowledgements
+
+- [react-to-pdf](https://github.com/ivmarcos/react-to-pdf) - For PDF generation
+- [react-textarea-code-editor](https://github.com/uiwjs/react-textarea-code-editor) - For code editing
+
+================================================================================
+
+
+FILE: eslint.config.js
+================================================================================
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+)
+
+================================================================================
+
+
+FILE: extract-files.js
+================================================================================
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Output file path
+const outputFile = 'project-files.txt';
+
+// Function to recursively walk directories
+function walkDir(dir, callback) {
+  fs.readdirSync(dir).forEach(f => {
+    const filePath = path.join(dir, f);
+    const stat = fs.statSync(filePath);
+    
+    if (stat.isDirectory()) {
+      // Skip node_modules directory
+      if (f === 'node_modules') return;
+      walkDir(filePath, callback);
+    } else {
+      // Skip package-lock.json
+      if (f === 'package-lock.json') return;
+      callback(filePath);
+    }
+  });
+}
+
+// Create or clear the output file
+fs.writeFileSync(outputFile, '');
+
+// Walk through directories and append file contents to output file
+walkDir('.', (filePath) => {
+  try {
+    // Skip binary files and the output file itself
+    const ext = path.extname(filePath).toLowerCase();
+    if (['.png', '.jpg', '.jpeg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.otf'].includes(ext)) {
+      return;
+    }
+    
+    if (path.basename(filePath) === outputFile) {
+      return;
+    }
+    
+    // Read file content
+    const content = fs.readFileSync(filePath, 'utf8');
+    
+    // Append file path and content to output file
+    const separator = '\n' + '='.repeat(80) + '\n';
+    const fileHeader = `FILE: ${filePath}${separator}`;
+    const fileFooter = separator + '\n\n';
+    
+    fs.appendFileSync(outputFile, fileHeader + content + fileFooter);
+    
+    console.log(`Added: ${filePath}`);
+  } catch (err) {
+    console.error(`Error processing file ${filePath}: ${err.message}`);
+  }
+});
+
+console.log(`All files extracted to ${outputFile}`); 
+================================================================================
+
+
+FILE: index.html
+================================================================================
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/pdf-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A powerful tool to render React components and convert them to PDF with customisable options" />
+    <meta name="keywords" content="React, PDF, converter, component, Material-UI, Tailwind CSS" />
+    <meta name="author" content="React-to-PDF Team" />
+    <title>React to PDF Converter | Build and Export React Components</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              blue: {
+                '50': '#f0f9ff',
+                '100': '#e0f2fe',
+                '400': '#38bdf8',
+              },
+              gray: {
+                '50': '#f9fafb',
+                '100': '#f3f4f6',
+                '500': '#6b7280',
+                '600': '#4b5563',
+                '700': '#374151',
+                '800': '#1f2937',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+================================================================================
+
+
+FILE: package.json
+================================================================================
+{
+  "name": "temp-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@babel/standalone": "^7.27.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.4.8",
+    "@uiw/react-textarea-code-editor": "^3.1.0",
+    "lucide-react": "^0.484.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@tailwindcss/postcss": "^4.0.16",
+    "@types/babel__standalone": "^7.1.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.16",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}
+
+================================================================================
+
+
+FILE: postcss.config.js
+================================================================================
+export default {
+  plugins: {
+    '@tailwindcss/postcss': {},
+    autoprefixer: {},
+  },
+} 
+================================================================================
+
+
+FILE: public/pdf-icon.svg
+================================================================================
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- File outline -->
+  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+  <!-- Folded corner -->
+  <polyline points="14 2 14 8 20 8"></polyline>
+  <!-- PDF text -->
+  <text x="7.5" y="16.5" font-family="Arial, sans-serif" font-weight="bold" font-size="7" fill="#1976d2">PDF</text>
+</svg> 
+================================================================================
+
+
+FILE: public/vite.svg
+================================================================================
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
+================================================================================
+
+
+FILE: src/App.css
+================================================================================
+:root {
+  --primary-color: #1976d2;
+  --primary-dark: #1565c0;
+  --background-color: #f8f9fa;
+  --text-color: #333;
+  --border-color: #ddd;
+  --header-bg: #1a1e2e;
+  --header-text: white;
+  --button-hover: #40a9c4;
+  --error-color: #c62828;
+  --error-bg: #ffebee;
+  --light-bg: #f5f5f7;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--light-bg);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  background-color: var(--header-bg);
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+header p {
+  margin: 0.5rem 0 0;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+main {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 992px) {
+  main {
+    flex-direction: row;
+  }
+}
+
+.editor-container, .preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevent flex items from overflowing */
+}
+
+.editor-container h2, .preview-container h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+/* Code editor container */
+.code-editor-wrapper {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  height: 500px; /* Fixed height */
+  overflow: hidden; /* Hide any overflow */
+}
+
+/* Make the code editor itself scrollable */
+.code-editor-wrapper > div {
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+/* Error message styling */
+.error-message {
+  background-color: var(--error-bg);
+  color: var(--error-color);
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-left: 4px solid var(--error-color);
+}
+
+/* PDF options styling */
+.pdf-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+}
+
+.option-group label {
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.option-group select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: white;
+  font-size: 0.9rem;
+}
+
+/* Hidden PDF component container */
+.pdf-container {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 8.27in; /* A4 width by default */
+  background-color: white;
+  overflow: hidden;
+}
+
+/* Component preview container adjustments */
+.component-preview {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-height: 400px;
+  height: auto; /* Allow height to grow */
+  overflow: visible; /* Don't hide overflow */
+  background-color: white;
+  position: relative;
+}
+
+.preview-content {
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  overflow: visible;
+}
+
+/* Make sure Material-UI components have proper spacing and layout */
+.preview-content > div {
+  width: 100%;
+  overflow: visible;
+}
+
+/* Styles to ensure the Lucide icons render correctly */
+.component-preview svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.preview-code {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+}
+
+.preview-code pre {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 14px;
+}
+
+/* Reset button styles to maintain consistency */
+.generate-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.generate-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+.generate-btn:disabled {
+  background-color: #bbdefb;
+  cursor: not-allowed;
+}
+
+footer {
+  background-color: var(--header-bg);
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+/* Print container - hidden until print */
+.print-container {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  padding: 20px;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Print styles */
+@media print {
+  /* Hide everything except the print container */
+  .app-container > * {
+    display: none !important;
+  }
+
+  /* Show only the print container */
+  .print-container {
+    position: static;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block !important;
+    overflow: visible;
+  }
+
+  /* Remove any margin/padding to maximize print area */
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: visible;
+  }
+
+  /* Ensure proper background for printing */
+  body {
+    background-color: white;
+  }
+}
+
+/* Button container */
+.button-container {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Add some spacing between editor and preview on smaller screens */
+@media (max-width: 1024px) {
+  main {
+    flex-direction: column;
+  }
+  
+  .editor-container, .preview-container {
+    width: 100%;
+  }
+  
+  .code-editor-wrapper {
+    height: 400px;
+  }
+}
+
+/* Tailwind-specific print utilities */
+.page-break-inside-avoid {
+  page-break-inside: avoid;
+}
+
+@media print {
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+  }
+}
+
+================================================================================
+
+
+FILE: src/App.tsx
+================================================================================
+import { useState, useRef, useEffect } from 'react';
+import CodeEditor from '@uiw/react-textarea-code-editor';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import * as Babel from '@babel/standalone';
+import * as LucideIcons from 'lucide-react';
+import './App.css';
+import { exampleComponent } from './exampleComponent';
+
+// Libraries we'll make available to user components
+import { 
+  Button, 
+  Container, 
+  Card, 
+  Grid, 
+  Box, 
+  Typography, 
+  TextField,
+  Paper,
+  List,
+  ListItem,
+  Divider 
+} from '@mui/material';
+
+// Available modules for the user code
+const availableModules = {
+  'react': React,
+  '@mui/material': {
+    Button, Container, Card, Grid, Box, 
+    Typography, TextField, Paper, List, ListItem, Divider,
+  },
+  'react-dom': ReactDOM,
+  'lucide-react': LucideIcons,
+};
+
+function App() {
+  const [code, setCode] = useState<string>(exampleComponent);
+  const [error, setError] = useState<string | null>(null);
+  const [currentComponent, setCurrentComponent] = useState<React.ComponentType | null>(null);
+  const codePreviewRef = useRef<HTMLDivElement>(null);
+  const componentRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<ReactDOM.Root | null>(null);
+  const printRootRef = useRef<ReactDOM.Root | null>(null);
+  
+  const editorRef = useRef(null);
+
+  // Create roots - this only runs once on mount and not on re-renders
+  useEffect(() => {
+    let previewRoot: ReactDOM.Root | null = null;
+    let printRoot: ReactDOM.Root | null = null;
+    
+    // Create roots only if they don't exist
+    if (codePreviewRef.current && !rootRef.current) {
+      previewRoot = ReactDOM.createRoot(codePreviewRef.current);
+      rootRef.current = previewRoot;
+    }
+    
+    if (componentRef.current && !printRootRef.current) {
+      printRoot = ReactDOM.createRoot(componentRef.current);
+      printRootRef.current = printRoot;
+    }
+    
+    // Initial render of the component
+    if (previewRoot) {
+      try {
+        renderComponent(previewRoot);
+      } catch (error) {
+        console.error("Initial render error:", error);
+      }
+    }
+    
+    // Cleanup function
+    return () => {
+      // Use local variables to avoid accessing potentially nullified refs
+      if (previewRoot) {
+        try {
+          previewRoot.unmount();
+        } catch (error) {
+          console.error("Error unmounting preview root:", error);
+        }
+      }
+      
+      if (printRoot) {
+        try {
+          printRoot.unmount();
+        } catch (error) {
+          console.error("Error unmounting print root:", error);
+        }
+      }
+      
+      // Clear refs
+      rootRef.current = null;
+      printRootRef.current = null;
+    };
+  }, []); // Empty dependency array means this only runs once
+
+  // Handle code changes
+  useEffect(() => {
+    // Only re-render if the root already exists
+    if (rootRef.current) {
+      try {
+        renderComponent(rootRef.current);
+      } catch (error) {
+        console.error("Error rendering component on code change:", error);
+        setError(`Rendering error: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }, [code]);
+
+  // Function to render the component to a specified root
+  const renderComponent = (root: ReactDOM.Root) => {
+    try {
+      // Clear previous error
+      setError(null);
+      
+      // Extract imports before removing them
+      const iconImportMatch = code.match(/import\s+{\s*([\w\s,]+)\s*}\s+from\s+['"]lucide-react['"]/);
+      const iconNames = iconImportMatch && iconImportMatch[1] ? iconImportMatch[1].split(',').map(icon => icon.trim()) : [];
+      
+      // Extract component name - try different patterns
+      const functionMatch = code.match(/function\s+([A-Za-z0-9_]+)/);
+      const constArrowMatch = code.match(/const\s+([A-Za-z0-9_]+)\s*=\s*(\([^)]*\)|)\s*=>/);
+      const constFunctionMatch = code.match(/const\s+([A-Za-z0-9_]+)\s*=\s*function/);
+      
+      // Use the first match we find
+      const componentName = 
+        (functionMatch && functionMatch[1]) || 
+        (constArrowMatch && constArrowMatch[1]) || 
+        (constFunctionMatch && constFunctionMatch[1]);
+      
+      console.log("Detected component name:", componentName || "No component name detected");
+      
+      // Remove export default statements before processing
+      let processedCode = code.replace(/export\s+default\s+\w+;?/g, '');
+      
+      // Now remove all imports
+      processedCode = processedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
+      
+      // Transform JSX to JavaScript using Babel
+      let transformedCode;
+      try {
+        // @ts-ignore - Babel types aren't properly defined in the type definitions
+        transformedCode = Babel.transform(processedCode, {
+          presets: ['react'],
+          plugins: [
+            // Add a plugin to handle any references to environment variables
+            function() {
+              return {
+                visitor: {
+                  // @ts-ignore - Babel visitor path type isn't properly defined
+                  Identifier(path: any) {
+                    // Replace known environment variables with their literals
+                    if (path.node.name === 'development') {
+                      // @ts-ignore - Babel types isn't properly defined
+                      path.replaceWith({ type: 'BooleanLiteral', value: true });
+                    }
+                    if (path.node.name === 'production') {
+                      // @ts-ignore - Babel types isn't properly defined
+                      path.replaceWith({ type: 'BooleanLiteral', value: false });
+                    }
+                  }
+                }
+              };
+            }
+          ],
+          filename: 'usercode.jsx',
+        }).code || '';
+      } catch (babelError) {
+        throw new Error(`Babel transformation failed: ${babelError instanceof Error ? babelError.message : String(babelError)}`);
+      }
+      
+      // Wrap the code in a function to provide the necessary context
+      const wrappedCode = `
+        "use strict";
+        
+        // Global environment
+        const global = this;
+        const window = this;
+        
+        // Environment variables
+        const development = true;
+        const production = false;
+        const process = { env: { NODE_ENV: 'development' } };
+        
+        // React hooks
+        const { useState, useEffect, useRef, useMemo, useCallback, useContext, useReducer } = React;
+        
+        // Material UI components
+        const { 
+          Button, Container, Card, Grid, Box, 
+          Typography, TextField, Paper, List, ListItem, Divider 
+        } = MUI;
+        
+        // Handle all Lucide icons including wildcards
+        Object.keys(LucideIcons).forEach(key => {
+          if (typeof LucideIcons[key] === 'function') {
+            global[key] = LucideIcons[key];
+          }
+        });
+        
+        // Handle specifically imported icons
+        ${iconNames.length > 0 ? 
+          iconNames.map(icon => {
+            return `const ${icon} = LucideIcons['${icon}'] || (() => null);`
+          }).join('\n') : 
+          '// No Lucide icons imported'
+        }
+        
+        try {
+          // User code (transformed from JSX)
+          ${transformedCode}
+          
+          // Try different strategies to find a component
+          let result;
+          
+          // 1. Try the detected component name if available
+          ${componentName ? `
+          if (typeof ${componentName} === 'function') {
+            result = ${componentName};
+            console.log('Found component by name: ${componentName}');
+          }
+          ` : '// No component name detected'}
+          
+          // 2. Try export default
+          if (!result && typeof exports !== 'undefined' && exports.default) {
+            result = exports.default;
+            console.log('Found component via exports.default');
+          }
+          
+          // 3. Search through all globals for components
+          if (!result) {
+            const componentCandidates = Object.keys(global)
+              .filter(key => 
+                typeof global[key] === 'function' && 
+                // Skip known React functions
+                !['useState', 'useEffect', 'useRef', 'useMemo', 'useCallback', 'useContext', 'useReducer'].includes(key) &&
+                // Skip internal functions
+                !key.startsWith('_') && 
+                // Skip known utility functions
+                !['require', 'eval', 'parseInt', 'parseFloat'].includes(key)
+              )
+              .map(key => ({ name: key, component: global[key] }));
+            
+            console.log('Found component candidates:', componentCandidates.map(c => c.name));
+            
+            if (componentCandidates.length > 0) {
+              result = componentCandidates[0].component;
+              console.log('Using component:', componentCandidates[0].name);
+            }
+          }
+          
+          // Return the result, validating it's a valid component
+          if (typeof result === 'function') {
+            return result;
+          }
+          
+          throw new Error('Could not find a valid React component in your code. Make sure your component is either defined as a function or class that returns JSX.');
+        } catch (err) {
+          console.error('Component evaluation error:', err);
+          throw err;
+        }
+      `;
+      
+      // Create a function from the code and execute it
+      let UserComponent: React.ComponentType<any>;
+      try {
+        // Create a safe sandbox environment
+        const sandbox = {
+          console,
+          setTimeout,
+          clearTimeout,
+          setInterval,
+          clearInterval,
+          exports: {},
+          module: { exports: {} },
+          Object,
+          Array,
+          String,
+          Number,
+          Boolean,
+          Date,
+          Math,
+          JSON,
+          RegExp,
+          Error,
+          Map,
+          Set,
+          Promise,
+        };
+        
+        // Avoid trying to modify read-only prototype properties
+        
+        try {
+          const scopeFunction = new Function(
+            'React', 
+            'ReactDOM', 
+            'MUI',
+            'LucideIcons', 
+            'exports',
+            'module',
+            wrappedCode
+          );
+          
+          UserComponent = scopeFunction.call(
+            sandbox,
+            availableModules['react'],
+            availableModules['react-dom'],
+            availableModules['@mui/material'],
+            availableModules['lucide-react'],
+            sandbox.exports,
+            sandbox.module
+          );
+          
+          if (!UserComponent) {
+            // Try module.exports as fallback (CommonJS style)
+            // @ts-ignore - Add type assertion to handle module.exports
+            UserComponent = sandbox.module.exports?.default || sandbox.module.exports;
+          }
+        } catch (evalError) {
+          console.error('Evaluation syntax error:', evalError);
+          throw new Error(`Syntax error in component code: ${evalError instanceof Error ? evalError.message : String(evalError)}`);
+        }
+        
+        if (!UserComponent || typeof UserComponent !== 'function') {
+          throw new Error(`Component not found or not a function. Check that your component is properly defined and exported.`);
+        }
+        
+        // Save component for printing
+        setCurrentComponent(() => UserComponent);
+      } catch (executionError) {
+        console.error('Execution error details:', executionError);
+        throw new Error(`Component execution failed: ${executionError instanceof Error ? executionError.message : String(executionError)}`);
+      }
+      
+      // Render the component to the specified root
+      try {
+        // Add additional validation before rendering
+        if (typeof UserComponent !== 'function') {
+          throw new Error(`Component '${componentName}' is not a valid React component function`);
+        }
+        
+        // Create element with error boundary
+        const element = React.createElement(
+          class ErrorBoundary extends React.Component<any, {hasError: boolean, error: Error | null}> {
+            constructor(props: any) {
+              super(props);
+              this.state = { hasError: false, error: null };
+            }
+            
+            static getDerivedStateFromError(error: Error) {
+              return { hasError: true, error };
+            }
+            
+            render() {
+              if (this.state.hasError) {
+                return React.createElement(
+                  'div',
+                  { style: { padding: '20px', color: 'red' } },
+                  React.createElement('h3', null, 'Rendering Error'),
+                  React.createElement('p', null, this.state.error ? this.state.error.message : 'Unknown error')
+                );
+              }
+              
+              return React.createElement(UserComponent);
+            }
+          }
+        );
+        
+        // Render with the error boundary wrapper
+        root.render(element);
+      } catch (renderError) {
+        throw new Error(`Rendering failed: ${renderError instanceof Error ? renderError.message : String(renderError)}`);
+      }
+      
+    } catch (err) {
+      console.error('Error rendering component:', err);
+      setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      
+      // Show error in the preview
+      root.render(
+        React.createElement(
+          'div',
+          { style: { padding: '20px', color: 'red' } },
+          React.createElement('h3', null, 'Rendering Error'),
+          React.createElement('p', null, err instanceof Error ? err.message : String(err))
+        )
+      );
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!currentComponent || !printRootRef.current) return;
+    
+    try {
+      // Use createElement instead of JSX to avoid the need for transforming JSX here
+      printRootRef.current.render(React.createElement(currentComponent));
+      
+      // Open print dialog after a short delay to ensure rendering is complete
+      setTimeout(() => {
+        window.print();
+      }, 100);
+    } catch (err) {
+      console.error('Error preparing for print:', err);
+      setError(`Error preparing for print: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  return (
+    <div className="app-container">
+      <header>
+        <h1>React Component to PDF Converter</h1>
+        <p>Write your React component code, see it rendered, and download it as a PDF</p>
+      </header>
+
+      <main>
+        <div className="editor-container">
+          <h2>React Component Code</h2>
+          <div className="code-editor-wrapper">
+            <CodeEditor
+              ref={editorRef}
+              value={code}
+              language="tsx"
+              placeholder="Write your React component code here..."
+              onChange={(evn) => setCode(evn.target.value)}
+              padding={15}
+              style={{
+                fontSize: 14,
+                backgroundColor: "#f5f5f5",
+                fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
+                minHeight: '100%',
+                width: '100%',
+                borderRadius: '4px',
+              }}
+            />
+          </div>
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+          <div className="button-container">
+            <button 
+              onClick={handlePrint} 
+              className="generate-btn" 
+              disabled={!!error || !currentComponent}
+            >
+              Print Component
+            </button>
+          </div>
+        </div>
+
+        <div className="preview-container">
+          <h2>Component Preview</h2>
+          <div className="component-preview">
+            <div ref={codePreviewRef} className="preview-content">
+              {/* The component will be rendered here */}
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      {/* Hidden component for printing - renders in isolation */}
+      <div id="print-container" ref={componentRef} className="print-container">
+        {/* The component will be rendered here for printing */}
+      </div>
+
+      <footer>
+        <p>Built with React</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
+
+================================================================================
+
+
+FILE: src/assets/react.svg
+================================================================================
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+================================================================================
+
+
+FILE: src/exampleComponent.ts
+================================================================================
+export const exampleComponent = `
+import React from 'react';
+import { FileText, Mail, Phone, Calendar } from 'lucide-react';
+import { Typography, Divider, Paper, Box, Button } from '@mui/material';
+
+function InvoiceComponent() {
+  const invoiceData = {
+    invoiceNumber: 'INV-2023-0042',
+    date: '24 May 2024',
+    dueDate: '7 June 2024',
+    company: {
+      name: 'Acme Web Solutions Ltd',
+      address: '123 Tech Park, Digital Avenue',
+      city: 'London, EC1A 1BB',
+      email: 'accounts@acmewebsolutions.co.uk',
+      phone: '+44 20 1234 5678'
+    },
+    client: {
+      name: 'Global Enterprises Inc.',
+      address: '456 Corporate Plaza, Business Street',
+      city: 'Manchester, M1 2AB',
+      email: 'billing@globalenterprises.co.uk'
+    },
+    items: [
+      { description: 'Website Design & Development', hours: 42, rate: 85, amount: 3570 },
+      { description: 'UI/UX Consultation', hours: 16, rate: 95, amount: 1520 },
+      { description: 'Content Management System', hours: 24, rate: 80, amount: 1920 },
+      { description: 'Responsive Testing', hours: 8, rate: 75, amount: 600 }
+    ],
+    subtotal: 7610,
+    vat: 1522,
+    total: 9132
+  };
+
+  return (
+    <Paper elevation={0} sx={{ p: 4, maxWidth: '210mm', margin: 'auto', backgroundColor: '#fff' }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+            {invoiceData.company.name}
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            {invoiceData.company.address}
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            {invoiceData.company.city}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+            <Mail size={16} style={{ marginRight: '8px' }} />
+            <Typography variant="body2">{invoiceData.company.email}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+            <Phone size={16} style={{ marginRight: '8px' }} />
+            <Typography variant="body2">{invoiceData.company.phone}</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ textAlign: 'right' }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <FileText size={24} style={{ marginRight: '8px' }} />
+            INVOICE
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1 }}>
+            <strong>#{invoiceData.invoiceNumber}</strong>
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 0.5 }}>
+            <Calendar size={16} style={{ marginRight: '8px' }} />
+            <Typography variant="body2">
+              <strong>Date:</strong> {invoiceData.date}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 0.5 }}>
+            <Calendar size={16} style={{ marginRight: '8px' }} />
+            <Typography variant="body2">
+              <strong>Due Date:</strong> {invoiceData.dueDate}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Client Details */}
+      <Box sx={{ mb: 4, p: 3, bgcolor: '#f9f9f9', borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>Bill To:</Typography>
+        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>{invoiceData.client.name}</Typography>
+        <Typography variant="body2">{invoiceData.client.address}</Typography>
+        <Typography variant="body2">{invoiceData.client.city}</Typography>
+        <Typography variant="body2">{invoiceData.client.email}</Typography>
+      </Box>
+
+      {/* Invoice Items */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', bgcolor: '#1976d2', color: 'white', p: 1.5, borderRadius: '4px 4px 0 0' }}>
+          <Typography variant="subtitle1" sx={{ flex: 3, fontWeight: 'bold' }}>Description</Typography>
+          <Typography variant="subtitle1" sx={{ flex: 1, textAlign: 'center', fontWeight: 'bold' }}>Hours</Typography>
+          <Typography variant="subtitle1" sx={{ flex: 1, textAlign: 'center', fontWeight: 'bold' }}>Rate (£)</Typography>
+          <Typography variant="subtitle1" sx={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}>Amount (£)</Typography>
+        </Box>
+        
+        {invoiceData.items.map((item, index) => (
+          <Box key={index} sx={{ 
+            display: 'flex', 
+            p: 2, 
+            borderBottom: '1px solid #eee',
+            bgcolor: index % 2 === 0 ? '#f9f9f9' : 'white' 
+          }}>
+            <Typography variant="body2" sx={{ flex: 3 }}>{item.description}</Typography>
+            <Typography variant="body2" sx={{ flex: 1, textAlign: 'center' }}>{item.hours}</Typography>
+            <Typography variant="body2" sx={{ flex: 1, textAlign: 'center' }}>{item.rate.toFixed(2)}</Typography>
+            <Typography variant="body2" sx={{ flex: 1, textAlign: 'right' }}>{item.amount.toFixed(2)}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Totals */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', mb: 4 }}>
+        <Box sx={{ display: 'flex', width: '250px', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body1">Subtotal:</Typography>
+          <Typography variant="body1">£{invoiceData.subtotal.toFixed(2)}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', width: '250px', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body1">VAT (20%):</Typography>
+          <Typography variant="body1">£{invoiceData.vat.toFixed(2)}</Typography>
+        </Box>
+        <Divider sx={{ width: '250px', my: 1 }} />
+        <Box sx={{ display: 'flex', width: '250px', justifyContent: 'space-between' }}>
+          <Typography variant="h6">Total:</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>£{invoiceData.total.toFixed(2)}</Typography>
+        </Box>
+      </Box>
+
+      {/* Footer */}
+      <Box sx={{ textAlign: 'center', mt: 6, pt: 2, borderTop: '1px solid #eee' }}>
+        <Typography variant="body2" color="textSecondary">
+          Thank you for your business! Payment is due within 14 days.
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+          Please make payment to: Acme Web Solutions Ltd • Sort Code: 12-34-56 • Account: 12345678
+        </Typography>
+      </Box>
+    </Paper>
+  );
+}
+
+export default InvoiceComponent;
+`; 
+================================================================================
+
+
+FILE: src/index.css
+================================================================================
+/* Custom styles for the application */
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Custom page break classes for PDF output */
+.page-break-inside-avoid {
+  page-break-inside: avoid;
+}
+
+.page-break-before {
+  page-break-before: always;
+}
+
+.page-break-after {
+  page-break-after: always;
+}
+
+/* We can remove these custom classes since we now have Tailwind properly installed */
+
+================================================================================
+
+
+FILE: src/main.tsx
+================================================================================
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+================================================================================
+
+
+FILE: src/vite-env.d.ts
+================================================================================
+/// <reference types="vite/client" />
+
+================================================================================
+
+
+FILE: tailwind.config.js
+================================================================================
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+} 
+================================================================================
+
+
+FILE: tsconfig.app.json
+================================================================================
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}
+
+================================================================================
+
+
+FILE: tsconfig.json
+================================================================================
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+================================================================================
+
+
+FILE: tsconfig.node.json
+================================================================================
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+================================================================================
+
+
+FILE: vite.config.ts
+================================================================================
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+================================================================================
+
+

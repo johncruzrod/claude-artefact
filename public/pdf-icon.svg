@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- File outline -->
+  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+  <!-- Folded corner -->
+  <polyline points="14 2 14 8 20 8"></polyline>
+  <!-- PDF text -->
+  <text x="7.5" y="16.5" font-family="Arial, sans-serif" font-weight="bold" font-size="7" fill="#1976d2">PDF</text>
+</svg> 
