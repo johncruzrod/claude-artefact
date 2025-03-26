@@ -4,10 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A powerful tool to render React components and convert them to PDF with customisable options" />
-    <meta name="keywords" content="React, PDF, converter, component, Material-UI, Tailwind CSS" />
+    <meta
+      name="description"
+      content="A powerful tool to render React components and convert them to PDF with customisable options"
+    />
+    <meta
+      name="keywords"
+      content="React, PDF, converter, component, Material-UI, Tailwind CSS"
+    />
     <meta name="author" content="React-to-PDF Team" />
     <title>React to PDF Converter | Build and Export React Components</title>
+
+    <!-- Include Tailwind if you need it -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -15,26 +23,36 @@
           extend: {
             colors: {
               blue: {
-                '50': '#f0f9ff',
-                '100': '#e0f2fe',
-                '400': '#38bdf8',
+                "50": "#f0f9ff",
+                "100": "#e0f2fe",
+                "400": "#38bdf8"
               },
               gray: {
-                '50': '#f9fafb',
-                '100': '#f3f4f6',
-                '500': '#6b7280',
-                '600': '#4b5563',
-                '700': '#374151',
-                '800': '#1f2937',
+                "50": "#f9fafb",
+                "100": "#f3f4f6",
+                "500": "#6b7280",
+                "600": "#4b5563",
+                "700": "#374151",
+                "800": "#1f2937"
               }
             }
           }
         }
       }
     </script>
+
+    <!-- GOOGLE ADSENSE AUTO ADS SCRIPT -->
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7575254394615209"
+      crossorigin="anonymous"
+    ></script>
+    <!-- /END GOOGLE ADSENSE AUTO ADS SCRIPT -->
   </head>
+
   <body>
     <div id="root"></div>
+    <!-- Your main React/Vite entry script -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
