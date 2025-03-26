@@ -1,4 +1,4 @@
-export const exampleComponent = `import React from 'react';
+import React from 'react';
 import { 
   FileText, Copy, BookOpen, Download, Code, 
   ExternalLink, Settings, CheckCircle, Star
@@ -21,42 +21,43 @@ function ClaudeTutorial() {
   const [activeStep, setActiveStep] = React.useState(0);
   
   return (
-    <div className="max-w-3xl mx-auto py-4">
-      <div className="p-4 rounded-lg overflow-hidden shadow-sm bg-white">
-        {/* Hero section */}
-        <div className="p-4 mb-4 rounded-lg text-white text-center relative overflow-hidden" 
-             style={{ 
-               backgroundColor: claudeColors.primary,
-               backgroundImage: "linear-gradient(135deg, " + claudeColors.primary + " 0%, " + claudeColors.primaryLight + " 40%, #F2A48D 100%)"
-             }}>
-          <div className="absolute top-[-20px] right-[-20px] w-[120px] h-[120px] rounded-full bg-white/10" />
-          <div className="absolute bottom-[-30px] left-[-30px] w-[150px] h-[150px] rounded-full bg-white/10" />
-          
-          <Star size={32} className="mb-4" />
-          <h4 className="font-bold text-2xl mb-1">
-            Claude Artifact to PDF Converter
-          </h4>
-          <h6 className="opacity-90 max-w-md mx-auto">
-            Convert Claude's code artifacts into beautifully rendered, downloadable PDFs in seconds
-          </h6>
-        </div>
+    <div className="w-full min-h-screen bg-white">
+      {/* Hero section - now full width */}
+      <div className="w-full p-4 lg:p-6 text-white text-center relative overflow-hidden" 
+           style={{ 
+             backgroundColor: claudeColors.primary,
+             backgroundImage: "linear-gradient(135deg, " + claudeColors.primary + " 0%, " + claudeColors.primaryLight + " 40%, #F2A48D 100%)"
+           }}>
+        <div className="absolute top-[-30px] right-[-30px] w-[140px] h-[140px] rounded-full bg-white/10" />
+        <div className="absolute bottom-[-40px] left-[-40px] w-[160px] h-[160px] rounded-full bg-white/10" />
         
+        <Star size={28} className="mb-2" />
+        <h4 className="font-bold text-xl mb-1">
+          Claude Artifact to PDF Converter
+        </h4>
+        <h6 className="opacity-90 max-w-2xl mx-auto text-base">
+          Convert Claude's code artifacts into beautifully rendered, downloadable PDFs in seconds
+        </h6>
+      </div>
+      
+      {/* Main content - centered with max-width */}
+      <div className="max-w-7xl mx-auto px-8 lg:px-12 py-12">
         {/* Introduction */}
-        <div className="mb-5">
-          <p className="text-lg leading-relaxed" style={{ color: claudeColors.secondary }}>
+        <div className="mb-12">
+          <p className="text-xl leading-relaxed" style={{ color: claudeColors.secondary }}>
             This tool makes it easy to transform code artifacts from Claude into professional PDFs. Simply paste your artifact code, preview how it looks, and download it as a PDF document.
           </p>
         </div>
         
         {/* Guided steps with Stepper */}
-        <h5 className="flex items-center mb-3 text-xl" style={{ color: claudeColors.secondaryDark }}>
-          <BookOpen size={20} className="mr-2" /> 
+        <h5 className="flex items-center mb-6 text-2xl" style={{ color: claudeColors.secondaryDark }}>
+          <BookOpen size={24} className="mr-3" /> 
           How to Use This Tool
         </h5>
         
-        <div className="mb-5">
+        <div className="mb-12">
           {/* Step 1 */}
-          <div className="mb-6">
+          <div className="mb-12">
             <div className="flex">
               <div className="mr-4 flex flex-col items-center">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
@@ -65,21 +66,19 @@ function ClaudeTutorial() {
                 <div className="w-0.5 h-full bg-gray-200 my-2"></div>
               </div>
               <div className="flex-1">
-                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                <h6 className="text-lg font-medium mb-3" style={{ color: claudeColors.secondaryDark }}>
                   Find an artifact in your Claude conversation
                 </h6>
                 <div className="ml-0">
-                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
-                    When you ask Claude to create React components, charts, or visualisations, it will display artifacts with code blocks that look like this:
+                  <p className="mb-3" style={{ color: claudeColors.secondary }}>
+                    When you ask Claude to create React components, charts, or visualisations, it will display artifacts that look like this:
                   </p>
                   
-                  <div className="mb-2 overflow-hidden rounded-lg border border-gray-100 shadow-md">
-                    <img 
-                      src="/artefact.png"
-                      alt="Claude artifact example" 
-                      className="w-full h-auto object-contain"
-                      style={{ maxHeight: '300px' }}
-                    />
+                  <div className="mb-3 overflow-hidden rounded-lg border border-gray-100 shadow-md">
+                    <div 
+                      className="w-full bg-no-repeat bg-center bg-contain" 
+                      style={{ backgroundImage: 'url(/artefact.png)', paddingTop: '50%' }}
+                    ></div>
                   </div>
                   
                   <p style={{ color: claudeColors.secondary }}>
@@ -91,7 +90,7 @@ function ClaudeTutorial() {
           </div>
           
           {/* Step 2 */}
-          <div className="mb-6">
+          <div className="mb-12">
             <div className="flex">
               <div className="mr-4 flex flex-col items-center">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
@@ -100,31 +99,25 @@ function ClaudeTutorial() {
                 <div className="w-0.5 h-full bg-gray-200 my-2"></div>
               </div>
               <div className="flex-1">
-                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                <h6 className="text-lg font-medium mb-3" style={{ color: claudeColors.secondaryDark }}>
                   Copy the code from the artifact
                 </h6>
                 <div className="ml-0">
-                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                  <p className="mb-3" style={{ color: claudeColors.secondary }}>
                     Click the copy button in the bottom-right corner of the artifact to copy the code to your clipboard:
                   </p>
                   
-                  <div className="flex items-center mb-3">
-                    <div className="max-w-xs overflow-hidden rounded-lg border border-gray-100 shadow-md">
-                      <img 
-                        src="/copyartefactsmallimage.png"
-                        alt="Copy button on Claude artifact" 
-                        className="w-full h-auto object-contain"
-                        style={{ maxHeight: '200px' }}
-                      />
-                    </div>
+                  <div className="mb-3 overflow-hidden rounded-lg border border-gray-100 shadow-md max-w-md">
                     <div 
-                      className="flex ml-4 p-2.5 rounded-lg items-center"
-                      style={{ backgroundColor: 'rgba(217,119,87,0.08)' }}
-                    >
-                      <Copy size={18} style={{ color: claudeColors.primary }} className="mr-3" />
-                      <p className="font-medium" style={{ color: claudeColors.primaryDark }}>
-                        Click this icon to copy code
-                      </p>
+                      className="w-full bg-no-repeat bg-center bg-contain" 
+                      style={{ backgroundImage: 'url(/copyartefactsmallimage.png)', paddingTop: '50%' }}
+                    ></div>
+                  </div>
+                  
+                  <div className="bg-[#FDF7F5] p-4 rounded-lg w-fit">
+                    <div className="flex items-center text-[#D97757]">
+                      <Copy size={20} className="mr-2" />
+                      <span className="text-lg">Click this icon to copy code</span>
                     </div>
                   </div>
                 </div>
@@ -133,7 +126,7 @@ function ClaudeTutorial() {
           </div>
           
           {/* Step 3 */}
-          <div className="mb-6">
+          <div className="mb-12">
             <div className="flex">
               <div className="mr-4 flex flex-col items-center">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
@@ -142,16 +135,16 @@ function ClaudeTutorial() {
                 <div className="w-0.5 h-full bg-gray-200 my-2"></div>
               </div>
               <div className="flex-1">
-                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                <h6 className="text-lg font-medium mb-3" style={{ color: claudeColors.secondaryDark }}>
                   Paste the code into this tool
                 </h6>
                 <div className="ml-0">
-                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                  <p className="mb-3" style={{ color: claudeColors.secondary }}>
                     Delete this tutorial code from the editor on the left and paste the copied code from Claude.
                   </p>
                   
                   <div 
-                    className="flex p-2 rounded-lg text-white items-center mb-2"
+                    className="flex p-2 rounded-lg text-white items-center mb-3"
                     style={{ backgroundColor: claudeColors.primaryLight }}
                   >
                     <CheckCircle size={20} className="mr-3" />
@@ -165,7 +158,7 @@ function ClaudeTutorial() {
           </div>
           
           {/* Step 4 */}
-          <div className="mb-6">
+          <div className="mb-12">
             <div className="flex">
               <div className="mr-4 flex flex-col items-center">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
@@ -174,15 +167,15 @@ function ClaudeTutorial() {
                 <div className="w-0.5 h-full bg-gray-200 my-2"></div>
               </div>
               <div className="flex-1">
-                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                <h6 className="text-lg font-medium mb-3" style={{ color: claudeColors.secondaryDark }}>
                   Download as PDF
                 </h6>
                 <div className="ml-0">
-                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                  <p className="mb-3" style={{ color: claudeColors.secondary }}>
                     Once your component renders correctly in the preview panel, click the "Download as PDF" button at the bottom of the editor.
                   </p>
                   
-                  <div className="flex items-center mb-2">
+                  <div className="flex items-center mb-3">
                     <button 
                       className="flex items-center px-3 py-2 rounded-md text-white font-medium"
                       style={{ backgroundColor: claudeColors.primary }}
@@ -201,7 +194,7 @@ function ClaudeTutorial() {
           </div>
           
           {/* Step 5 */}
-          <div className="mb-6">
+          <div className="mb-12">
             <div className="flex">
               <div className="mr-4 flex flex-col items-center">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
@@ -209,25 +202,23 @@ function ClaudeTutorial() {
                 </div>
               </div>
               <div className="flex-1">
-                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                <h6 className="text-lg font-medium mb-3" style={{ color: claudeColors.secondaryDark }}>
                   Customise your PDF output
                 </h6>
                 <div className="ml-0">
-                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                  <p className="mb-3" style={{ color: claudeColors.secondary }}>
                     You can customise how your PDF looks by adjusting the print settings in your browser:
                   </p>
                   
                   <div className="mb-3 overflow-hidden rounded-lg border border-gray-100 shadow-md">
-                    <img 
-                      src="/printartefact.png"
-                      alt="Print settings dialog" 
-                      className="w-full h-auto object-contain"
-                      style={{ maxHeight: '300px' }}
-                    />
+                    <div 
+                      className="w-full bg-no-repeat bg-center bg-contain" 
+                      style={{ backgroundImage: 'url(/printartefact.png)', paddingTop: '75%' }}
+                    ></div>
                   </div>
                   
                   <div 
-                    className="p-2 rounded-lg mb-2"
+                    className="p-2 rounded-lg mb-3"
                     style={{ backgroundColor: 'rgba(217,119,87,0.08)' }}
                   >
                     <p className="flex items-center mb-1.5 font-medium" style={{ color: claudeColors.primaryDark }}>
@@ -289,13 +280,13 @@ function ClaudeTutorial() {
         </div>
         
         {/* Supported Libraries */}
-        <div className="mb-5">
-          <h5 className="flex items-center mb-3 text-xl" style={{ color: claudeColors.secondaryDark }}>
-            <BookOpen size={20} className="mr-2" />
+        <div className="mb-12">
+          <h5 className="flex items-center mb-6 text-2xl" style={{ color: claudeColors.secondaryDark }}>
+            <BookOpen size={24} className="mr-3" />
             Supported Libraries
           </h5>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
               { name: 'React', desc: 'Core library & hooks' },
               { name: 'Material UI', desc: 'UI components & styling' },
@@ -326,16 +317,13 @@ function ClaudeTutorial() {
         </div>
         
         {/* Pro Tips */}
-        <div className="mb-4">
-          <h5 className="flex items-center mb-3 text-xl" style={{ color: claudeColors.secondaryDark }}>
-            <Star size={20} className="mr-2" />
+        <div className="mb-12">
+          <h5 className="flex items-center mb-6 text-2xl" style={{ color: claudeColors.secondaryDark }}>
+            <Star size={24} className="mr-3" />
             Pro Tips
           </h5>
           
-          <div 
-            className="p-3 mb-3 rounded-lg border-none"
-            style={{ background: 'linear-gradient(135deg, rgba(217,119,87,0.1) 0%, rgba(230,139,111,0.1) 100%)' }}
-          >
+          <div className="p-6 mb-4 rounded-xl border-none">
             <div className="flex items-start">
               <CheckCircle 
                 size={22} 
@@ -356,10 +344,7 @@ function ClaudeTutorial() {
             </div>
           </div>
           
-          <div 
-            className="p-3 rounded-lg border-none"
-            style={{ background: 'linear-gradient(135deg, rgba(217,119,87,0.1) 0%, rgba(230,139,111,0.1) 100%)' }}
-          >
+          <div className="p-6 rounded-xl border-none">
             <div className="flex items-start">
               <CheckCircle 
                 size={22} 
@@ -413,28 +398,25 @@ function ClaudeTutorial() {
           </div>
         </div>
         
-        <div className="h-px bg-gray-200 mb-3"></div>
+        <div className="h-px bg-gray-200 mb-6"></div>
         
-        {/* Footer */}
-        <div className="text-center">
-          <p 
-            className="mb-2"
-            style={{ color: claudeColors.secondaryLight }}
-          >
+        {/* Footer - now with top border */}
+        <div className="border-t border-gray-200 mt-12 pt-8 text-center">
+          <p className="mb-4 text-lg" style={{ color: claudeColors.secondaryLight }}>
             Get started by replacing this tutorial with your Claude artifact code.
           </p>
           <a
             href="https://claude.ai" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-flex items-center px-3 py-1 text-sm border rounded-md"
+            className="inline-flex items-center px-4 py-2 text-base border rounded-lg hover:bg-gray-50 transition-colors"
             style={{
               color: claudeColors.primary,
               borderColor: claudeColors.primary,
             }}
           >
             Visit Claude.ai
-            <ExternalLink size={14} className="ml-1" />
+            <ExternalLink size={16} className="ml-2" />
           </a>
         </div>
       </div>
@@ -442,4 +424,4 @@ function ClaudeTutorial() {
   );
 }
 
-export default ClaudeTutorial;`;
+export default ClaudeTutorial;

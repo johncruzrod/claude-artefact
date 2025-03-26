@@ -10,7 +10,6 @@ import * as THREE from 'three';
 import * as Tone from 'tone';
 import * as math from 'mathjs';
 import './App.css';
-import { exampleComponent } from './exampleComponent';
 
 // We'll make these Material UI components available
 import { 
@@ -88,7 +87,7 @@ const availableModules = {
 };
 
 function App() {
-  const [code, setCode] = useState<string>(exampleComponent);
+  const [code, setCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [currentComponent, setCurrentComponent] = useState<React.ComponentType | null>(null);
 
@@ -215,6 +214,26 @@ function App() {
       }
     }
   }, [code]);
+
+  // Add a new useEffect to load the tutorial on component mount
+  useEffect(() => {
+    const loadTutorial = async () => {
+      try {
+        const response = await fetch('/tutorial.txt');
+        if (!response.ok) {
+          throw new Error(`Failed to load tutorial: ${response.statusText}`);
+        }
+        const tutorialCode = await response.text();
+        setCode(tutorialCode);
+        setError(null);
+        setPlaceholderWarning(null);
+      } catch (err) {
+        setError(String(err));
+      }
+    };
+    
+    loadTutorial();
+  }, []);
 
   // Load sample code from e.g. public/sample1.txt, public/sample2.txt, ...
   const loadSampleCode = async (sampleNumber: number) => {
