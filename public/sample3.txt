@@ -1,125 +1,192 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const DoublePendulum = () => {
+// Up to 5 different colours for 5 masses
+const MASS_COLOURS = ['red', 'blue', 'green', 'orange', 'purple'];
+
+/**
+ * This component implements a simple chain of up to 5 pendulums,
+ * each treated as a point mass connected by a rigid rod to the previous pivot.
+ * We apply gravity and then enforce each rod's distance constraint.
+ * Crucially, we also project out the radial component of velocity to allow
+ * tangential swinging. This prevents the masses from just locking in place.
+ */
+const MultiPendulum = () => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
-  const [graphData, setGraphData] = useState([]);
 
-  // Simulation parameters
-  const [initialAngle1, setInitialAngle1] = useState(Math.PI / 2);
-  const [initialAngle2, setInitialAngle2] = useState(Math.PI / 2);
-  const [length1, setLength1] = useState(80);
-  const [length2, setLength2] = useState(80);
-  const [mass1, setMass1] = useState(10);
-  const [mass2, setMass2] = useState(10);
+  // Number of pendulum masses (1 to 5)
+  const [numMasses, setNumMasses] = useState(3);
+
+  // Arrays for the rod lengths, masses and initial angles (from the vertical)
+  const [lengths, setLengths] = useState([80, 80, 80, 80, 80]);
+  const [masses, setMasses] = useState([10, 10, 10, 10, 10]);
+  const [angles, setAngles] = useState([
+    Math.PI / 2,
+    Math.PI / 2,
+    Math.PI / 2,
+    Math.PI / 2,
+    Math.PI / 2
+  ]);
+
+  // Other global parameters
   const [gravity, setGravity] = useState(9.81);
   const [damping, setDamping] = useState(0.999);
-  const [zoom, setZoom] = useState(1); // Zoom parameter
+  const [zoom, setZoom] = useState(1);
+
+  // Internal arrays for positions, velocities and trails
+  // We will reinitialise them whenever the user changes the setup
+  let positions = [];
+  let velocities = [];
+  let trails = [];
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    // Angles and velocities
-    let angle1 = initialAngle1;
-    let angle2 = initialAngle2;
-    let angle1Velocity = 0;
-    let angle2Velocity = 0;
-    let time = 0;
+    // Create arrays to store positions, velocities and trails for each mass
+    positions = Array(numMasses)
+      .fill(null)
+      .map(() => ({ x: 0, y: 0 }));
+    velocities = Array(numMasses)
+      .fill(null)
+      .map(() => ({ x: 0, y: 0 }));
+    trails = Array(numMasses)
+      .fill(null)
+      .map(() => []);
 
-    // Trails
-    let blueTrail = [];
-    let redTrail = [];
+    // Set up initial positions from angles
+    // Each mass i is offset from the previous pivot by length[i], at angles[i] from vertical
+    const pivotX = canvas.width / 2;
+    const pivotY = canvas.height / 3;
 
-    // Clear any existing graph data
-    setGraphData([]);
+    for (let i = 0; i < numMasses; i++) {
+      if (i === 0) {
+        // First mass is directly from the fixed pivot
+        positions[i].x = pivotX + (lengths[i] * zoom) * Math.sin(angles[i]);
+        positions[i].y = pivotY + (lengths[i] * zoom) * Math.cos(angles[i]);
+      } else {
+        // Subsequent masses offset from the previous mass
+        positions[i].x =
+          positions[i - 1].x + (lengths[i] * zoom) * Math.sin(angles[i]);
+        positions[i].y =
+          positions[i - 1].y + (lengths[i] * zoom) * Math.cos(angles[i]);
+      }
+      // Zero initial velocity by default
+      velocities[i].x = 0;
+      velocities[i].y = 0;
+      // Empty trail
+      trails[i] = [];
+    }
 
+    const dt = 0.05;
     const animate = () => {
-      // White background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const dt = 0.05;
+      // 1. Apply gravity to each mass
+      for (let i = 0; i < numMasses; i++) {
+        velocities[i].y += gravity * dt; // downward acceleration
+      }
 
-      // Physics calculations
-      const num1 = -gravity * (2 * mass1 + mass2) * Math.sin(angle1);
-      const num2 = -mass2 * gravity * Math.sin(angle1 - 2 * angle2);
-      const num3 = -2 * Math.sin(angle1 - angle2) * mass2;
-      const num4 = angle2Velocity * angle2Velocity * length2
-        + angle1Velocity * angle1Velocity * length1 * Math.cos(angle1 - angle2);
-      const den = length1 * (2 * mass1 + mass2 - mass2 * Math.cos(2 * angle1 - 2 * angle2));
-      const angle1Acceleration = (num1 + num2 + num3 * num4) / den;
+      // 2. Integrate positions
+      for (let i = 0; i < numMasses; i++) {
+        positions[i].x += velocities[i].x * dt;
+        positions[i].y += velocities[i].y * dt;
+      }
 
-      const num5 = 2 * Math.sin(angle1 - angle2);
-      const num6 = angle1Velocity * angle1Velocity * length1 * (mass1 + mass2);
-      const num7 = gravity * (mass1 + mass2) * Math.cos(angle1);
-      const num8 = angle2Velocity * angle2Velocity * length2 * mass2 * Math.cos(angle1 - angle2);
-      const den2 = length2 * (2 * mass1 + mass2 - mass2 * Math.cos(2 * angle1 - 2 * angle2));
-      const angle2Acceleration = (num5 * (num6 + num7 + num8)) / den2;
+      // 3. Enforce rod constraints and project out radial velocity
+      for (let i = 0; i < numMasses; i++) {
+        // Determine the pivot for mass i
+        let pivotPos;
+        if (i === 0) {
+          pivotPos = { x: pivotX, y: pivotY };
+        } else {
+          pivotPos = positions[i - 1];
+        }
 
-      // Update velocities and angles
-      angle1Velocity += angle1Acceleration * dt;
-      angle2Velocity += angle2Acceleration * dt;
-      angle1 += angle1Velocity * dt;
-      angle2 += angle2Velocity * dt;
+        // Current dx, dy
+        const dx = positions[i].x - pivotPos.x;
+        const dy = positions[i].y - pivotPos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const desired = lengths[i] * zoom;
 
-      // Damping
-      angle1Velocity *= damping;
-      angle2Velocity *= damping;
+        // Position correction (keep rod length constant)
+        if (dist !== 0) {
+          const diff = (dist - desired) / dist;
+          positions[i].x -= dx * diff;
+          positions[i].y -= dy * diff;
+        }
 
-      // Calculate positions with zoom factor
-      const pivotX = canvas.width / 2;
-      const pivotY = canvas.height / 3;
-      const x1 = pivotX + (length1 * zoom) * Math.sin(angle1);
-      const y1 = pivotY + (length1 * zoom) * Math.cos(angle1);
-      const x2 = x1 + (length2 * zoom) * Math.sin(angle2);
-      const y2 = y1 + (length2 * zoom) * Math.cos(angle2);
+        // Velocity correction (remove radial component)
+        // so the mass can only move tangentially along the circle
+        const nx = positions[i].x - pivotPos.x;
+        const ny = positions[i].y - pivotPos.y;
+        const nDist = Math.sqrt(nx * nx + ny * ny);
+        if (nDist > 1e-8) {
+          // Normalised rod direction
+          const invDist = 1 / nDist;
+          const rodX = nx * invDist;
+          const rodY = ny * invDist;
 
-      // Draw pivot and arms
+          // Dot product of velocity with rod direction
+          const dot = velocities[i].x * rodX + velocities[i].y * rodY;
+          // Subtract out the radial component
+          velocities[i].x -= dot * rodX;
+          velocities[i].y -= dot * rodY;
+        }
+      }
+
+      // 4. Apply damping to velocities
+      for (let i = 0; i < numMasses; i++) {
+        velocities[i].x *= damping;
+        velocities[i].y *= damping;
+      }
+
+      // 5. Draw everything
+      // Draw the fixed pivot
       ctx.beginPath();
       ctx.arc(pivotX, pivotY, 5, 0, 2 * Math.PI);
       ctx.fillStyle = 'black';
       ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(pivotX, pivotY);
-      ctx.lineTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.strokeStyle = '#555';
-      ctx.lineWidth = 2;
-      ctx.stroke();
 
-      // Update trails
-      blueTrail.push({ x: x1, y: y1 });
-      redTrail.push({ x: x2, y: y2 });
-      if (blueTrail.length > 200) blueTrail.shift();
-      if (redTrail.length > 200) redTrail.shift();
+      // For each mass, draw rod, trail and mass
+      for (let i = 0; i < numMasses; i++) {
+        // Pivot for rod i
+        let pivotPos;
+        if (i === 0) {
+          pivotPos = { x: pivotX, y: pivotY };
+        } else {
+          pivotPos = positions[i - 1];
+        }
 
-      // Draw trails in the colour of the corresponding mass
-      const drawTrail = (trail, color) => {
+        // Draw rod
         ctx.beginPath();
-        trail.forEach((point, index) => {
-          ctx.lineTo(point.x, point.y);
-          // Fade out older parts of the trail
-          ctx.strokeStyle = `rgba(${color}, ${index / trail.length})`;
+        ctx.moveTo(pivotPos.x, pivotPos.y);
+        ctx.lineTo(positions[i].x, positions[i].y);
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Update trail
+        trails[i].push({ x: positions[i].x, y: positions[i].y });
+        if (trails[i].length > 200) {
+          trails[i].shift();
+        }
+
+        // Draw trail
+        ctx.beginPath();
+        for (let j = 0; j < trails[i].length; j++) {
+          ctx.lineTo(trails[i][j].x, trails[i][j].y);
+          ctx.strokeStyle = `rgba(${getRgbForIndex(i)}, ${j / trails[i].length})`;
           ctx.stroke();
-        });
-      };
+        }
 
-      drawTrail(blueTrail, '0, 0, 255');
-      drawTrail(redTrail, '255, 0, 0');
-
-      // Draw pendulum masses
-      ctx.beginPath();
-      ctx.arc(x1, y1, 10, 0, 2 * Math.PI);
-      ctx.fillStyle = 'blue';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x2, y2, 10, 0, 2 * Math.PI);
-      ctx.fillStyle = 'red';
-      ctx.fill();
-
-      // Increment time (though not used in chart anymore, we keep it if needed)
-      time += dt;
+        // Draw mass
+        ctx.beginPath();
+        ctx.arc(positions[i].x, positions[i].y, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = MASS_COLOURS[i];
+        ctx.fill();
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -132,119 +199,131 @@ const DoublePendulum = () => {
       }
     };
   }, [
-    initialAngle1,
-    initialAngle2,
-    length1,
-    length2,
-    mass1,
-    mass2,
+    numMasses,
+    lengths,
+    masses, // Masses not strictly used in this simple constraint approach, but included for extension
+    angles,
     gravity,
     damping,
     zoom
   ]);
+
+  // Convert named colours to RGB for trail drawing
+  const getRgbForIndex = (i) => {
+    switch (MASS_COLOURS[i]) {
+      case 'red':
+        return '255, 0, 0';
+      case 'blue':
+        return '0, 0, 255';
+      case 'green':
+        return '0, 128, 0';
+      case 'orange':
+        return '255, 165, 0';
+      case 'purple':
+        return '128, 0, 128';
+      default:
+        return '0, 0, 0';
+    }
+  };
+
+  // Handlers for updating array values
+  const handleNumMassesChange = (e) => {
+    setNumMasses(parseInt(e.target.value));
+  };
+
+  const handleLengthChange = (index, value) => {
+    const newLengths = [...lengths];
+    newLengths[index] = parseFloat(value);
+    setLengths(newLengths);
+  };
+
+  const handleMassChange = (index, value) => {
+    const newMasses = [...masses];
+    newMasses[index] = parseFloat(value);
+    setMasses(newMasses);
+  };
+
+  const handleAngleChange = (index, value) => {
+    const newAngles = [...angles];
+    newAngles[index] = parseFloat(value);
+    setAngles(newAngles);
+  };
 
   return (
     <div className="flex">
       {/* Controls Panel (Left) */}
       <div className="w-64 p-4 bg-gray-100 rounded-lg flex-shrink-0">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Simulation Controls</h2>
-        
+
+        {/* Number of Masses */}
         <div className="mb-4">
-          <label htmlFor="angle1-slider" className="block text-sm font-medium text-gray-700 mb-1">
-            Initial Angle 1: {initialAngle1.toFixed(2)} rad
+          <label htmlFor="numMasses" className="block text-sm font-medium text-gray-700 mb-1">
+            Number of Masses: {numMasses}
           </label>
           <input
-            id="angle1-slider"
-            type="range"
-            min={0}
-            max={Math.PI * 2}
-            step={0.01}
-            value={initialAngle1}
-            onChange={(e) => setInitialAngle1(parseFloat(e.target.value))}
-            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label htmlFor="angle2-slider" className="block text-sm font-medium text-gray-700 mb-1">
-            Initial Angle 2: {initialAngle2.toFixed(2)} rad
-          </label>
-          <input
-            id="angle2-slider"
-            type="range"
-            min={0}
-            max={Math.PI * 2}
-            step={0.01}
-            value={initialAngle2}
-            onChange={(e) => setInitialAngle2(parseFloat(e.target.value))}
-            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label htmlFor="length1-slider" className="block text-sm font-medium text-gray-700 mb-1">
-            Length 1: {length1}px
-          </label>
-          <input
-            id="length1-slider"
-            type="range"
-            min={20}
-            max={200}
-            step={1}
-            value={length1}
-            onChange={(e) => setLength1(parseFloat(e.target.value))}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label htmlFor="length2-slider" className="block text-sm font-medium text-gray-700 mb-1">
-            Length 2: {length2}px
-          </label>
-          <input
-            id="length2-slider"
-            type="range"
-            min={20}
-            max={200}
-            step={1}
-            value={length2}
-            onChange={(e) => setLength2(parseFloat(e.target.value))}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label htmlFor="mass1-slider" className="block text-sm font-medium text-gray-700 mb-1">
-            Mass 1: {mass1} kg
-          </label>
-          <input
-            id="mass1-slider"
+            id="numMasses"
             type="range"
             min={1}
-            max={50}
+            max={5}
             step={1}
-            value={mass1}
-            onChange={(e) => setMass1(parseFloat(e.target.value))}
-            className="w-full h-2 bg-red-200 rounded-lg appearance-none cursor-pointer"
+            value={numMasses}
+            onChange={handleNumMassesChange}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
         </div>
-        
-        <div className="mb-4">
-          <label htmlFor="mass2-slider" className="block text-sm font-medium text-gray-700 mb-1">
-            Mass 2: {mass2} kg
-          </label>
-          <input
-            id="mass2-slider"
-            type="range"
-            min={1}
-            max={50}
-            step={1}
-            value={mass2}
-            onChange={(e) => setMass2(parseFloat(e.target.value))}
-            className="w-full h-2 bg-red-200 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-        
+
+        {/* Sliders for each mass, shown only if i < numMasses */}
+        {Array.from({ length: 5 }).map((_, i) => {
+          if (i >= numMasses) return null;
+          return (
+            <div key={i} className="mb-4 border border-gray-200 p-2 rounded">
+              <p className="font-semibold text-sm text-gray-600">
+                Mass {i + 1} ({MASS_COLOURS[i]})
+              </p>
+
+              <label className="block text-xs text-gray-700 mt-2">
+                Initial Angle: {angles[i].toFixed(2)} rad
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={Math.PI * 2}
+                step={0.01}
+                value={angles[i]}
+                onChange={(e) => handleAngleChange(i, e.target.value)}
+                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+              />
+
+              <label className="block text-xs text-gray-700 mt-2">
+                Length: {lengths[i]}px
+              </label>
+              <input
+                type="range"
+                min={20}
+                max={200}
+                step={1}
+                value={lengths[i]}
+                onChange={(e) => handleLengthChange(i, e.target.value)}
+                className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+              />
+
+              <label className="block text-xs text-gray-700 mt-2">
+                Mass: {masses[i]} kg
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={50}
+                step={1}
+                value={masses[i]}
+                onChange={(e) => handleMassChange(i, e.target.value)}
+                className="w-full h-2 bg-red-200 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          );
+        })}
+
+        {/* Global sliders */}
         <div className="mb-4">
           <label htmlFor="gravity-slider" className="block text-sm font-medium text-gray-700 mb-1">
             Gravity: {gravity.toFixed(2)} m/s²
@@ -260,7 +339,7 @@ const DoublePendulum = () => {
             className="w-full h-2 bg-yellow-200 rounded-lg appearance-none cursor-pointer"
           />
         </div>
-        
+
         <div className="mb-4">
           <label htmlFor="damping-slider" className="block text-sm font-medium text-gray-700 mb-1">
             Damping: {damping.toFixed(3)}
@@ -276,7 +355,7 @@ const DoublePendulum = () => {
             className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
           />
         </div>
-        
+
         <div className="mb-4">
           <label htmlFor="zoom-slider" className="block text-sm font-medium text-gray-700 mb-1">
             Zoom: {zoom.toFixed(2)}
@@ -307,4 +386,4 @@ const DoublePendulum = () => {
   );
 };
 
-export default DoublePendulum;
+export default MultiPendulum;
