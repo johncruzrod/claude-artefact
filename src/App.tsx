@@ -10,7 +10,6 @@ import * as THREE from 'three';
 import * as Tone from 'tone';
 import * as math from 'mathjs';
 import './App.css';
-
 // We'll make these Material UI components available
 import { 
   Button, 
@@ -25,7 +24,6 @@ import {
   ListItem,
   Divider 
 } from '@mui/material';
-
 /* 
    Placeholder implementations for "@/components/ui/card". 
    These are minimal <div>/<h3> etc. to avoid runtime errors 
@@ -35,27 +33,21 @@ import {
 const MyCustomCard = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={className || ''} {...rest}>{children}</div>
 );
-
 const MyCustomCardHeader = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={className || ''} {...rest}>{children}</div>
 );
-
 const MyCustomCardTitle = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
   <h3 className={className || ''} {...rest}>{children}</h3>
 );
-
 const MyCustomCardContent = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={className || ''} {...rest}>{children}</div>
 );
-
 const MyCustomCardFooter = ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={className || ''} {...rest}>{children}</div>
 );
-
 const MyCustomCardDescription = ({ children, className, ...rest }: React.HTMLAttributes<HTMLParagraphElement>) => (
   <p className={className || ''} {...rest}>{children}</p>
 );
-
 // Combine them into one object mapped to "@/components/ui/card"
 const MyCardModule = {
   Card: MyCustomCard,
@@ -65,7 +57,6 @@ const MyCardModule = {
   CardFooter: MyCustomCardFooter,
   CardDescription: MyCustomCardDescription,
 };
-
 // Our available modules
 const availableModules = {
   'react': React,
@@ -81,36 +72,27 @@ const availableModules = {
   'three': THREE,
   'tone': Tone,
   'mathjs': math,
-
   // The crucial addition: placeholders for "@/components/ui/card"
   '@/components/ui/card': MyCardModule
 };
-
 function App() {
   const [code, setCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [currentComponent, setCurrentComponent] = useState<React.ComponentType | null>(null);
-
   // We'll store a warning message if the user code references "@/components/ui/card"
   const [placeholderWarning, setPlaceholderWarning] = useState<string | null>(null);
-
   // States to show "copied!" confirmation
   const [hintCopied, setHintCopied] = useState(false);
   const [pdfTipCopied, setPdfTipCopied] = useState(false);
-
   const codePreviewRef = useRef<HTMLDivElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<ReactDOM.Root | null>(null);
   const printRootRef = useRef<ReactDOM.Root | null>(null);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   // The text we want the user to copy for removing @/components/ui/card
   const removalHintText = `Please create the artifact as is, but without @/components/ui/card`;
-
   // The text we want the user to copy for PDF print tip
   const pdfBreakTipText = `Can you also make it so that when printed each individual component does not break on the printed pages?`;
-
   // Function to copy the removal hint text
   const handleCopyHint = () => {
     navigator.clipboard.writeText(removalHintText).then(() => {
@@ -120,7 +102,6 @@ function App() {
       console.error('Failed to copy text:', err);
     });
   };
-
   // Function to copy the PDF tip text
   const handleCopyPdfTip = () => {
     navigator.clipboard.writeText(pdfBreakTipText).then(() => {
@@ -130,12 +111,10 @@ function App() {
       console.error('Failed to copy text:', err);
     });
   };
-
   // Create React roots once on mount
   useEffect(() => {
     let previewRoot: ReactDOM.Root | null = null;
     let printRoot: ReactDOM.Root | null = null;
-
     if (codePreviewRef.current && !rootRef.current) {
       previewRoot = ReactDOM.createRoot(codePreviewRef.current);
       rootRef.current = previewRoot;
@@ -144,7 +123,6 @@ function App() {
       printRoot = ReactDOM.createRoot(componentRef.current);
       printRootRef.current = printRoot;
     }
-
     if (previewRoot) {
       try {
         renderComponent(previewRoot);
@@ -152,7 +130,6 @@ function App() {
         console.error("Initial render error:", error);
       }
     }
-
     return () => {
       if (previewRoot) {
         try {
@@ -172,7 +149,6 @@ function App() {
       printRootRef.current = null;
     };
   }, []);
-
   // Inject a little print CSS
   useEffect(() => {
     const style = document.createElement('style');
@@ -202,7 +178,6 @@ function App() {
       document.head.removeChild(style);
     };
   }, []);
-
   // Re-render on code changes
   useEffect(() => {
     if (rootRef.current) {
@@ -214,7 +189,6 @@ function App() {
       }
     }
   }, [code]);
-
   // Add a new useEffect to load the tutorial on component mount
   useEffect(() => {
     const loadTutorial = async () => {
@@ -234,7 +208,6 @@ function App() {
     
     loadTutorial();
   }, []);
-
   // Load sample code from e.g. public/sample1.txt, public/sample2.txt, ...
   const loadSampleCode = async (sampleNumber: number) => {
     try {
@@ -250,22 +223,17 @@ function App() {
       setError(String(err));
     }
   };
-
   // Preprocess user code: remove/transform imports
   const preprocessUserCode = (sourceCode: string): string => {
     setPlaceholderWarning(null);
-
     const userImports = new Set<string>();
     const importRegex = /import\s+(?:{[^}]*}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
     let match;
-
     while ((match = importRegex.exec(sourceCode)) !== null) {
       const importPath = match[1];
       userImports.add(importPath);
     }
-
     let transformedCode = sourceCode;
-
     if (userImports.has('recharts')) {
       transformedCode = transformedCode.replace(
         /import\s+{([^}]*)}\s+from\s+['"]recharts['"];?/g,
@@ -318,7 +286,6 @@ function App() {
         '// math is available as math'
       );
     }
-
     // If the user tries to import from "@/components/ui/card", 
     // we do a transform and show a user-friendly warning
     if (userImports.has('@/components/ui/card')) {
@@ -327,29 +294,23 @@ function App() {
         'Your component will still render, but it may not look correct.\n\n' +
         'To fix this, please ask Claude to remove "@/components/ui/card" references by saying:\n'
       );
-
       transformedCode = transformedCode.replace(
         /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/card['"];?/g,
         'const { $1 } = customCard;'
       );
     }
-
     // Remove any leftover import lines
     transformedCode = transformedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
-
     // Remove export default lines
     transformedCode = transformedCode.replace(
       /export\s+default\s+([A-Za-z0-9_]+);?/g,
       '// exporting $1'
     );
-
     return transformedCode;
   };
-
   const renderComponent = (root: ReactDOM.Root) => {
     try {
       setError(null);
-
       let componentName: string | null = null;
       const arrowMatch = code.match(
         /const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/
@@ -369,9 +330,7 @@ function App() {
           componentName = exportMatch[1];
         }
       }
-
       const processedCode = preprocessUserCode(code);
-
       const transformedCode = Babel.transform(processedCode, {
         presets: ['react'],
         plugins: [
@@ -392,7 +351,6 @@ function App() {
         ],
         filename: 'usercode.jsx'
       }).code || '';
-
       let componentExtractionCode: string;
       if (componentName) {
         componentExtractionCode = `
@@ -420,7 +378,6 @@ function App() {
           throw new Error('No React component found in code');
         `;
       }
-
       const wrappedCode = `
         const React = reactLib;
         const {
@@ -436,15 +393,12 @@ function App() {
         const THREE = threeLib;
         const Tone = toneLib;
         const math = mathLib;
-
         // For "@/components/ui/card" imports
         const customCard = cardLib;
-
         const {
           Button, Container, Card, Grid, Box,
           Typography, TextField, Paper, List, ListItem, Divider
         } = mui;
-
         try {
           ${transformedCode}
           ${componentExtractionCode}
@@ -452,7 +406,6 @@ function App() {
           throw err;
         }
       `;
-
       const execFunc = new Function(
         'reactLib',
         'reactDOMLib',
@@ -467,7 +420,6 @@ function App() {
         'cardLib',
         wrappedCode
       );
-
       const execContext: Record<string, any> = {
         console: console,
         setTimeout: setTimeout,
@@ -475,7 +427,6 @@ function App() {
         setInterval: setInterval,
         clearInterval: clearInterval
       };
-
       const UserComponent = execFunc.call(
         execContext,
         availableModules['react'],
@@ -490,12 +441,10 @@ function App() {
         availableModules['mathjs'],
         availableModules['@/components/ui/card']
       );
-
       if (!UserComponent || typeof UserComponent !== 'function') {
         throw new Error('Component not found or not a valid function');
       }
       setCurrentComponent(() => UserComponent);
-
       const generateDemoData = (count = 7) => {
         return Array.from({ length: count }, (_, i) => ({
           name: `Category ${i + 1}`,
@@ -505,11 +454,9 @@ function App() {
           trend: Math.sin(i / 2) * 100 + 500
         }));
       };
-
       const WrapperComponent = () => {
         const [activeTab, setActiveTab] = React.useState('dashboard');
         const [demoData, setDemoData] = React.useState(generateDemoData(7));
-
         const icons = {
           LayoutDashboard: availableModules['lucide-react'].LayoutDashboard,
           BarChart3: availableModules['lucide-react'].BarChart3,
@@ -523,7 +470,6 @@ function App() {
           PauseCircle: availableModules['lucide-react'].PauseCircle,
           Wand2: availableModules['lucide-react'].Wand2
         };
-
         try {
           const props = {
             activeTab,
@@ -554,7 +500,6 @@ function App() {
           );
         }
       };
-
       const element = React.createElement(
         class ErrorBoundary extends React.Component<any, { hasError: boolean; error: Error | null }> {
           constructor(props: any) {
@@ -580,7 +525,6 @@ function App() {
           }
         }
       );
-
       root.render(element);
     } catch (err) {
       console.error(err);
@@ -595,7 +539,6 @@ function App() {
       );
     }
   };
-
   // Print logic
   const handlePrint = async () => {
     if (!currentComponent || !printRootRef.current) return;
@@ -615,9 +558,7 @@ function App() {
       setError(`Error preparing for print: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-
   const showAppUI = true;
-
   const sampleButtonStyle: React.CSSProperties = {
     padding: '0.75rem 1rem',
     backgroundColor: '#4A5568',
@@ -630,17 +571,14 @@ function App() {
     transition: 'background-color 0.2s ease-in-out',
     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
   };
-
   // Add this to your state declarations at the top of the App component
   const [leftPanelWidth, setLeftPanelWidth] = useState(35); // Changed from 40 to 35
   const [isDragging, setIsDragging] = useState(false);
-
   // Update the event handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-
   // Add this useEffect to handle the mouse move and up events
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -653,22 +591,18 @@ function App() {
         setLeftPanelWidth(Math.min(Math.max(newWidth, 20), 80));
       }
     };
-
     const handleMouseUp = () => {
       setIsDragging(false);
     };
-
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging]);
-
   return (
     <div
       className="root-container"
@@ -717,11 +651,10 @@ function App() {
           }
         ` : ''}
       `}</style>
-
       {showAppUI && (
         <>
           {/* Our custom "header" in the app */}
-          <div className="app-header" style={{ padding: '0.5rem 0' }}>
+          <div className="genvise-app-header" style={{ padding: '0.5rem 0' }}>
             <h1 style={{ 
               margin: '0 0 0.25rem 0',  // Further reduced margin
               fontSize: '1.5rem'         // Even smaller font size
@@ -736,7 +669,6 @@ function App() {
               Paste your Claude artifact code, see it rendered, and download it as a PDF
             </p>
           </div>
-
           <main
             className="main-container"
             style={{
@@ -763,10 +695,9 @@ function App() {
                 overflow: 'hidden'
               }}
             >
-              <h2 style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
+              <h2 className="genvise-section-title" style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
                 Claude Artifact Code
               </h2>
-
               <div
                 style={{
                   marginBottom: '1rem',
@@ -805,7 +736,6 @@ function App() {
                   </span>
                 </div>
               </div>
-
               {/* If we have a placeholder warning, show it above the code box */}
               {placeholderWarning && (
                 <div
@@ -858,7 +788,6 @@ function App() {
                   </div>
                 </div>
               )}
-
               <div
                 style={{
                   height: 'calc(100vh - 320px)',
@@ -894,7 +823,6 @@ function App() {
                   placeholder="Paste your Claude artifact React component code here..."
                 />
               </div>
-
               {error && (
                 <div
                   style={{
@@ -910,7 +838,6 @@ function App() {
                   {error}
                 </div>
               )}
-
               <div
                 style={{
                   marginTop: '1rem',
@@ -947,7 +874,6 @@ function App() {
                 >
                   Download as PDF
                 </button>
-
                 <button
                   onClick={() => loadSampleCode(1)}
                   style={{ ...sampleButtonStyle }}
@@ -986,7 +912,6 @@ function App() {
                 </button>
               </div>
             </div>
-
             <div
               className={`resize-handle ${isDragging ? 'active' : ''}`}
               onMouseDown={handleMouseDown}
@@ -1000,7 +925,6 @@ function App() {
                 transition: 'background-color 0.2s'
               }}
             />
-
             <div
               className="right-panel"
               style={{
@@ -1008,11 +932,11 @@ function App() {
                 minWidth: '350px'
               }}
             >
-              <h2 style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
+              <h2 className="genvise-section-title" style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
                 Component Preview
               </h2>
-
               <div
+                className="genvise-preview-container"
                 style={{
                   height: 'calc(100vh - 240px)',
                   border: '1px solid #e2e8f0',
@@ -1024,18 +948,17 @@ function App() {
                 <div
                   ref={codePreviewRef}
                   style={{
-                    all: 'unset',
                     display: 'block',
-                    boxSizing: 'border-box'
+                    width: '100%',
+                    height: '100%'
                   }}
                 />
               </div>
             </div>
           </main>
-
           {/* Our custom app footer */}
           <div
-            className="app-footer"
+            className="genvise-app-footer"
             style={{
               marginTop: 'auto',
               padding: '1rem',
@@ -1067,7 +990,6 @@ function App() {
           </div>
         </>
       )}
-
       {/* Hidden print container */}
       <div
         id="print-container"
@@ -1088,5 +1010,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
