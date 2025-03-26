@@ -51,6 +51,22 @@ function App() {
   const printRootRef = useRef<ReactDOM.Root | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Function to load sample code from text files
+  const loadSampleCode = async (sampleNumber: number) => {
+    try {
+      const response = await fetch(`/src/sample${sampleNumber}.txt`);
+      if (!response.ok) {
+        throw new Error(`Failed to load sample ${sampleNumber}: ${response.statusText}`);
+      }
+      const sampleCode = await response.text();
+      setCode(sampleCode);
+    } catch (err) {
+      console.error(`Error loading sample ${sampleNumber}:`, err);
+      setError(`Error loading sample ${sampleNumber}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  
   // Create roots - this only runs once on mount and not on re-renders
   useEffect(() => {
     let previewRoot: ReactDOM.Root | null = null;
@@ -249,7 +265,6 @@ function App() {
       // ===== STEP 1: EXTRACT COMPONENT INFO =====
       // First, identify the component name and type
       let componentName: string | null = null;
-
       // Check for arrow function components (most common)
       const arrowMatch = code.match(/const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/);
       if (arrowMatch && arrowMatch[1]) {
@@ -619,6 +634,21 @@ function App() {
   };
   // Determine if we should show the app UI or just the print view
   const showAppUI = true; // Always show the app UI
+  
+  // Define the common style for sample buttons
+  const sampleButtonStyle = {
+    padding: '0.75rem 1rem',
+    backgroundColor: '#4A5568',
+    color: 'white',
+    border: 'none',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease-in-out',
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+  };
+  
   return (
     <div style={{
       display: 'flex',
@@ -718,7 +748,14 @@ function App() {
                   {error}
                 </div>
               )}
-              <div style={{ marginTop: '1rem' }}>
+              
+              {/* Action buttons */}
+              <div style={{ 
+                marginTop: '1rem', 
+                display: 'flex', 
+                gap: '0.5rem', 
+                flexWrap: 'wrap'
+              }}>
                 <button 
                   onClick={handlePrint} 
                   disabled={!!error || !currentComponent}
@@ -746,6 +783,34 @@ function App() {
                   }}
                 >
                   Download as PDF
+                </button>
+                
+                {/* Sample artifact buttons */}
+                <button 
+                  onClick={() => loadSampleCode(1)}
+                  style={{...sampleButtonStyle}}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#2D3748'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#4A5568'; }}
+                >
+                  Sample 1
+                </button>
+                
+                <button 
+                  onClick={() => loadSampleCode(2)}
+                  style={{...sampleButtonStyle}}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#2D3748'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#4A5568'; }}
+                >
+                  Sample 2
+                </button>
+                
+                <button 
+                  onClick={() => loadSampleCode(3)}
+                  style={{...sampleButtonStyle}}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#2D3748'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#4A5568'; }}
+                >
+                  Sample 3
                 </button>
               </div>
             </div>

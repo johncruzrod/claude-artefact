@@ -1,0 +1,331 @@
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, AreaChart, Area, ScatterChart, Scatter, Tooltip, Legend, ResponsiveContainer, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+
+const RandomDataViz = () => {
+  const [data, setData] = useState([]);
+  const [pieData, setPieData] = useState([]);
+  const [vizType, setVizType] = useState('line');
+  const [colorScheme, setColorScheme] = useState('purple');
+  const [lastUpdate, setLastUpdate] = useState(new Date().toLocaleTimeString());
+  
+  const colorSchemes = {
+    purple: {
+      primary: '#8884d8',
+      secondary: '#a89af9',
+      tertiary: '#5e48e8',
+      colors: ['#5e48e8', '#8884d8', '#a89af9', '#c2bbff', '#d9d4ff']
+    },
+    teal: {
+      primary: '#06b6d4',
+      secondary: '#0ea5e9',
+      tertiary: '#0d9488',
+      colors: ['#0d9488', '#06b6d4', '#0ea5e9', '#67e8f9', '#a5f3fc']
+    },
+    orange: {
+      primary: '#f97316',
+      secondary: '#fb923c',
+      tertiary: '#ea580c',
+      colors: ['#c2410c', '#ea580c', '#f97316', '#fb923c', '#fdba74']
+    }
+  };
+  
+  // Generate random data
+  useEffect(() => {
+    generateData();
+    const interval = setInterval(() => {
+      updateData();
+      setLastUpdate(new Date().toLocaleTimeString());
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  const generateData = () => {
+    const newData = [];
+    const categories = ['A', 'B', 'C', 'D', 'E'];
+    const newPieData = categories.map(cat => ({
+      name: `Category ${cat}`,
+      value: Math.floor(Math.random() * 500) + 100
+    }));
+    
+    for (let i = 0; i < 24; i++) {
+      newData.push({
+        name: `Point ${i+1}`,
+        value: Math.floor(Math.random() * 100),
+        value2: Math.floor(Math.random() * 100),
+        value3: Math.floor(Math.random() * 100)
+      });
+    }
+    setData(newData);
+    setPieData(newPieData);
+    setLastUpdate(new Date().toLocaleTimeString());
+  };
+  
+  const updateData = () => {
+    setData(prevData => {
+      return prevData.map(item => ({
+        ...item,
+        value: Math.max(0, Math.min(100, item.value + (Math.random() * 20 - 10))),
+        value2: Math.max(0, Math.min(100, item.value2 + (Math.random() * 20 - 10))),
+        value3: Math.max(0, Math.min(100, item.value3 + (Math.random() * 20 - 10)))
+      }));
+    });
+    
+    setPieData(prevData => {
+      return prevData.map(item => ({
+        ...item,
+        value: Math.max(50, Math.min(1000, item.value + (Math.random() * 100 - 50)))
+      }));
+    });
+  };
+  
+  const renderViz = () => {
+    const colors = colorSchemes[colorScheme];
+    
+    switch(vizType) {
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} />
+              <Tooltip />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                name="Series A"
+                stroke={colors.primary} 
+                strokeWidth={3} 
+                dot={{ r: 4, fill: colors.primary, strokeWidth: 1, stroke: "#fff" }}
+                activeDot={{ r: 8, fill: colors.primary, strokeWidth: 0 }}
+                animationDuration={300}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="value2" 
+                name="Series B"
+                stroke={colors.secondary} 
+                strokeWidth={3}
+                dot={{ r: 4, fill: colors.secondary, strokeWidth: 1, stroke: "#fff" }}
+                activeDot={{ r: 8, fill: colors.secondary, strokeWidth: 0 }}
+                animationDuration={300}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="value3" 
+                name="Series C"
+                stroke={colors.tertiary} 
+                strokeWidth={3}
+                dot={{ r: 4, fill: colors.tertiary, strokeWidth: 1, stroke: "#fff" }}
+                activeDot={{ r: 8, fill: colors.tertiary, strokeWidth: 0 }}
+                animationDuration={300}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case 'area':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <AreaChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} />
+              <Tooltip />
+              <Legend />
+              <defs>
+                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={colors.primary} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={colors.primary} stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorValue2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={colors.secondary} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={colors.secondary} stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorValue3" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={colors.tertiary} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={colors.tertiary} stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                name="Series A"
+                stroke={colors.primary} 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorValue)" 
+                animationDuration={300}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="value2" 
+                name="Series B"
+                stroke={colors.secondary} 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorValue2)" 
+                animationDuration={300}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="value3" 
+                name="Series C"
+                stroke={colors.tertiary} 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorValue3)" 
+                animationDuration={300}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        );
+      case 'scatter':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <ScatterChart>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <XAxis dataKey="value" type="number" name="Value A" domain={[0, 100]} />
+              <YAxis dataKey="value2" type="number" name="Value B" domain={[0, 100]} />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+              <Scatter 
+                name="Data Points" 
+                data={data} 
+                fill={colors.primary}
+                animationDuration={300}
+              />
+            </ScatterChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={140}
+                fill="#8884d8"
+                paddingAngle={5}
+                dataKey="value"
+                label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                animationDuration={500}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={colors.colors[index % colors.colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return null;
+    }
+  };
+  
+  const getStatValue = (dataArray, key) => {
+    if (!dataArray.length) return 'N/A';
+    return (dataArray.reduce((sum, item) => sum + (item[key] || 0), 0) / dataArray.length).toFixed(1);
+  };
+  
+  return (
+    <div className="p-6 bg-gray-50 rounded-lg shadow-lg">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2 text-gray-800">Interactive Data Explorer</h1>
+        <p className="text-gray-600">Real-time visualization of dynamically updating data (refreshes every 2 seconds)</p>
+      </div>
+      
+      <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => setVizType('line')}
+            className={`px-4 py-2 rounded ${vizType === 'line' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Line Chart
+          </button>
+          <button 
+            onClick={() => setVizType('area')}
+            className={`px-4 py-2 rounded ${vizType === 'area' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Area Chart
+          </button>
+          <button 
+            onClick={() => setVizType('scatter')}
+            className={`px-4 py-2 rounded ${vizType === 'scatter' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Scatter Chart
+          </button>
+          <button 
+            onClick={() => setVizType('pie')}
+            className={`px-4 py-2 rounded ${vizType === 'pie' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Donut Chart
+          </button>
+        </div>
+        
+        <div className="flex space-x-2 ml-auto">
+          <button 
+            onClick={() => setColorScheme('purple')}
+            className={`w-8 h-8 rounded-full border-2 ${colorScheme === 'purple' ? 'border-gray-800' : 'border-transparent'}`}
+            style={{ backgroundColor: colorSchemes.purple.primary }}
+            aria-label="Purple theme"
+          />
+          <button 
+            onClick={() => setColorScheme('teal')}
+            className={`w-8 h-8 rounded-full border-2 ${colorScheme === 'teal' ? 'border-gray-800' : 'border-transparent'}`}
+            style={{ backgroundColor: colorSchemes.teal.primary }}
+            aria-label="Teal theme"
+          />
+          <button 
+            onClick={() => setColorScheme('orange')}
+            className={`w-8 h-8 rounded-full border-2 ${colorScheme === 'orange' ? 'border-gray-800' : 'border-transparent'}`}
+            style={{ backgroundColor: colorSchemes.orange.primary }}
+            aria-label="Orange theme"
+          />
+          <button 
+            onClick={generateData}
+            className="px-4 py-2 rounded bg-green-600 text-white ml-2"
+          >
+            Generate New Data
+          </button>
+        </div>
+      </div>
+      
+      <div className="bg-white p-4 rounded-lg shadow">
+        {renderViz()}
+      </div>
+      
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-xl font-semibold mb-2">Dataset Overview</h3>
+          <p className="text-gray-700">Total Points: {data.length}</p>
+          <p className="text-gray-700">Series A Avg: {getStatValue(data, 'value')}</p>
+          <p className="text-gray-700">Series B Avg: {getStatValue(data, 'value2')}</p>
+          <p className="text-gray-700">Series C Avg: {getStatValue(data, 'value3')}</p>
+        </div>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-xl font-semibold mb-2">Value Ranges</h3>
+          <p className="text-gray-700">Min Value: {data.length ? 
+            Math.min(...data.flatMap(item => [item.value, item.value2, item.value3])).toFixed(1) : 'N/A'}</p>
+          <p className="text-gray-700">Max Value: {data.length ? 
+            Math.max(...data.flatMap(item => [item.value, item.value2, item.value3])).toFixed(1) : 'N/A'}</p>
+          <p className="text-gray-700">Range: 0-100 (capped)</p>
+          <p className="text-gray-700">Variation: ±10 points per update</p>
+        </div>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-xl font-semibold mb-2">Update Information</h3>
+          <p className="text-gray-700 font-medium">Last Update: <span className="font-normal">{lastUpdate}</span></p>
+          <p className="text-gray-700 font-medium">Refresh Rate: <span className="font-normal">Every 2 seconds</span></p>
+          <p className="text-gray-700 font-medium">Visualization Type: <span className="font-normal">{vizType.charAt(0).toUpperCase() + vizType.slice(1)} Chart</span></p>
+          <p className="text-gray-700 font-medium">Color Theme: <span className="font-normal">{colorScheme.charAt(0).toUpperCase() + colorScheme.slice(1)}</span></p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RandomDataViz;

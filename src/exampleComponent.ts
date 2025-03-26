@@ -1,390 +1,444 @@
 export const exampleComponent = `import React from 'react';
 import { 
-  Container, Typography, Paper, Box, Button, 
-  Card, Divider
-} from '@mui/material';
-import { FileText, BookOpen, Check, Download, Code } from 'lucide-react';
+  FileText, Copy, BookOpen, Download, Code, 
+  ExternalLink, Settings, CheckCircle, Star
+} from 'lucide-react';
 
 function ClaudeTutorial() {
+  // Claude brand colors to use throughout the component
+  const claudeColors = {
+    primary: '#D97757',
+    primaryLight: '#E68B6F', 
+    primaryDark: '#C65D3D',
+    secondary: '#4A5568',
+    secondaryLight: '#718096',
+    secondaryDark: '#2D3748',
+    white: '#FFFFFF',
+    bgDefault: '#F7FAFC',
+    bgPaper: '#FFFFFF'
+  };
+  // Active step state (not functional in this example)
+  const [activeStep, setActiveStep] = React.useState(0);
+  
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper elevation={0} sx={{ p: 4, borderRadius: 2, bgcolor: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <BookOpen size={32} style={{ color: '#5850EC', marginRight: '16px' }} />
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a202c' }}>
-              Claude Artifact to PDF Converter
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: '#4a5568' }}>
-              Turn Claude's artifacts into beautiful PDFs in seconds
-            </Typography>
-          </Box>
-        </Box>
+    <div className="max-w-3xl mx-auto py-4">
+      <div className="p-4 rounded-lg overflow-hidden shadow-sm bg-white">
+        {/* Hero section */}
+        <div className="p-4 mb-4 rounded-lg text-white text-center relative overflow-hidden" 
+             style={{ 
+               backgroundColor: claudeColors.primary,
+               backgroundImage: "linear-gradient(135deg, " + claudeColors.primary + " 0%, " + claudeColors.primaryLight + " 40%, #F2A48D 100%)"
+             }}>
+          <div className="absolute top-[-20px] right-[-20px] w-[120px] h-[120px] rounded-full bg-white/10" />
+          <div className="absolute bottom-[-30px] left-[-30px] w-[150px] h-[150px] rounded-full bg-white/10" />
+          
+          <Star size={32} className="mb-4" />
+          <h4 className="font-bold text-2xl mb-1">
+            Claude Artifact to PDF Converter
+          </h4>
+          <h6 className="opacity-90 max-w-md mx-auto">
+            Convert Claude's code artifacts into beautifully rendered, downloadable PDFs in seconds
+          </h6>
+        </div>
         
-        <Divider sx={{ mb: 4 }} />
-
         {/* Introduction */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            This tool allows you to transform artifacts from Claude into rendered PDFs. If you've asked Claude to create a React component, chart, or document, you can use this tool to see it rendered and save it as a PDF.
-          </Typography>
-        </Box>
-
-        {/* Step-by-step guide */}
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: '#2d3748' }}>
+        <div className="mb-5">
+          <p className="text-lg leading-relaxed" style={{ color: claudeColors.secondary }}>
+            This tool makes it easy to transform code artifacts from Claude into professional PDFs. Simply paste your artifact code, preview how it looks, and download it as a PDF document.
+          </p>
+        </div>
+        
+        {/* Guided steps with Stepper */}
+        <h5 className="flex items-center mb-3 text-xl" style={{ color: claudeColors.secondaryDark }}>
+          <BookOpen size={20} className="mr-2" /> 
           How to Use This Tool
-        </Typography>
-
-        {/* Step 1 */}
-        <Box sx={{ mb: 4, pl: 2, borderLeft: '2px solid #5850EC' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ 
-              width: 28, 
-              height: 28, 
-              borderRadius: '50%', 
-              bgcolor: '#5850EC', 
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              mr: 2
-            }}>
-              1
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Find an artifact in your Claude conversation
-            </Typography>
-          </Box>
+        </h5>
+        
+        <div className="mb-5">
+          {/* Step 1 */}
+          <div className="mb-6">
+            <div className="flex">
+              <div className="mr-4 flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
+                  <span className="text-white font-medium">1</span>
+                </div>
+                <div className="w-0.5 h-full bg-gray-200 my-2"></div>
+              </div>
+              <div className="flex-1">
+                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                  Find an artifact in your Claude conversation
+                </h6>
+                <div className="ml-0">
+                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                    When you ask Claude to create React components, charts, or visualisations, it will display artifacts with code blocks that look like this:
+                  </p>
+                  
+                  <div className="mb-2 overflow-hidden rounded-lg border border-gray-100 shadow-md">
+                    <img 
+                      src="/artefact.png"
+                      alt="Claude artifact example" 
+                      className="w-full h-auto object-contain"
+                      style={{ maxHeight: '300px' }}
+                    />
+                  </div>
+                  
+                  <p style={{ color: claudeColors.secondary }}>
+                    These artifacts contain React code that can be rendered into interactive components.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
           
-          <Box sx={{ pl: 5, mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
-              When you ask Claude to create React components, charts, or visualisations, it will display artifacts that look like this:
-            </Typography>
-            
-            <Card variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
-              <Box sx={{ 
-                width: '100%',
-                height: 'auto',
-                backgroundImage: 'url(/artefact.png)',
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                pt: '50%' // 2:1 aspect ratio
-              }} />
-            </Card>
-            
-            <Typography variant="body2" sx={{ color: '#4a5568' }}>
-              These artifacts contain React code that can be rendered into interactive components.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Step 2 */}
-        <Box sx={{ mb: 4, pl: 2, borderLeft: '2px solid #5850EC' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ 
-              width: 28, 
-              height: 28, 
-              borderRadius: '50%', 
-              bgcolor: '#5850EC', 
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              mr: 2
-            }}>
-              2
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Copy the code from the artifact
-            </Typography>
-          </Box>
+          {/* Step 2 */}
+          <div className="mb-6">
+            <div className="flex">
+              <div className="mr-4 flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
+                  <span className="text-white font-medium">2</span>
+                </div>
+                <div className="w-0.5 h-full bg-gray-200 my-2"></div>
+              </div>
+              <div className="flex-1">
+                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                  Copy the code from the artifact
+                </h6>
+                <div className="ml-0">
+                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                    Click the copy button in the bottom-right corner of the artifact to copy the code to your clipboard:
+                  </p>
+                  
+                  <div className="flex items-center mb-3">
+                    <div className="max-w-xs overflow-hidden rounded-lg border border-gray-100 shadow-md">
+                      <img 
+                        src="/copyartefactsmallimage.png"
+                        alt="Copy button on Claude artifact" 
+                        className="w-full h-auto object-contain"
+                        style={{ maxHeight: '200px' }}
+                      />
+                    </div>
+                    <div 
+                      className="flex ml-4 p-2.5 rounded-lg items-center"
+                      style={{ backgroundColor: 'rgba(217,119,87,0.08)' }}
+                    >
+                      <Copy size={18} style={{ color: claudeColors.primary }} className="mr-3" />
+                      <p className="font-medium" style={{ color: claudeColors.primaryDark }}>
+                        Click this icon to copy code
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
-          <Box sx={{ pl: 5, mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
-              Click the copy button in the bottom-right corner of the artifact to copy the code:
-            </Typography>
-            
-            <Card variant="outlined" sx={{ mb: 2, maxWidth: 300, overflow: 'hidden' }}>
-              <Box sx={{ 
-                width: '100%',
-                height: 'auto',
-                backgroundImage: 'url(/copyartefactsmallimage.png)',
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                pt: '75%' // 4:3 aspect ratio
-              }} />
-            </Card>
-            
-          </Box>
-        </Box>
-
-        {/* Step 3 */}
-        <Box sx={{ mb: 4, pl: 2, borderLeft: '2px solid #5850EC' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ 
-              width: 28, 
-              height: 28, 
-              borderRadius: '50%', 
-              bgcolor: '#5850EC', 
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              mr: 2
-            }}>
-              3
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Paste the code into this tool
-            </Typography>
-          </Box>
+          {/* Step 3 */}
+          <div className="mb-6">
+            <div className="flex">
+              <div className="mr-4 flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
+                  <span className="text-white font-medium">3</span>
+                </div>
+                <div className="w-0.5 h-full bg-gray-200 my-2"></div>
+              </div>
+              <div className="flex-1">
+                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                  Paste the code into this tool
+                </h6>
+                <div className="ml-0">
+                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                    Delete this tutorial code from the editor on the left and paste the copied code from Claude.
+                  </p>
+                  
+                  <div 
+                    className="flex p-2 rounded-lg text-white items-center mb-2"
+                    style={{ backgroundColor: claudeColors.primaryLight }}
+                  >
+                    <CheckCircle size={20} className="mr-3" />
+                    <p className="font-medium">
+                      The code will automatically render in the preview panel on the right
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
-          <Box sx={{ pl: 5, mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
-              Delete this tutorial code from the editor on the left and paste the copied code from Claude.
-            </Typography>
-            
-            <Typography variant="body2" sx={{ color: '#4a5568' }}>
-              The code will automatically render in the preview panel on the right as you paste it.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Step 4 */}
-        <Box sx={{ mb: 4, pl: 2, borderLeft: '2px solid #5850EC' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ 
-              width: 28, 
-              height: 28, 
-              borderRadius: '50%', 
-              bgcolor: '#5850EC', 
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              mr: 2
-            }}>
-              4
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Download as PDF
-            </Typography>
-          </Box>
+          {/* Step 4 */}
+          <div className="mb-6">
+            <div className="flex">
+              <div className="mr-4 flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
+                  <span className="text-white font-medium">4</span>
+                </div>
+                <div className="w-0.5 h-full bg-gray-200 my-2"></div>
+              </div>
+              <div className="flex-1">
+                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                  Download as PDF
+                </h6>
+                <div className="ml-0">
+                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                    Once your component renders correctly in the preview panel, click the "Download as PDF" button at the bottom of the editor.
+                  </p>
+                  
+                  <div className="flex items-center mb-2">
+                    <button 
+                      className="flex items-center px-3 py-2 rounded-md text-white font-medium"
+                      style={{ backgroundColor: claudeColors.primary }}
+                      disabled
+                    >
+                      <Download size={16} className="mr-2" />
+                      Download as PDF
+                    </button>
+                    <p className="ml-2 italic" style={{ color: claudeColors.secondary }}>
+                      ← The button will look like this
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
-          <Box sx={{ pl: 5, mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
-              Once your component renders correctly in the preview panel, click the "Download as PDF" button at the bottom of the editor.
-            </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Button 
-                variant="contained" 
-                startIcon={<Download size={16} />}
-                sx={{ 
-                  bgcolor: '#5850EC', 
-                  '&:hover': { bgcolor: '#4338ca' },
-                  fontWeight: 500
-                }}
-                disabled
-              >
-                Download as PDF
-              </Button>
-              <Typography variant="body2" sx={{ ml: 2, color: '#4a5568' }}>
-                ← The button will look like this
-              </Typography>
-            </Box>
-            
-            <Typography variant="body2" sx={{ color: '#4a5568' }}>
-              Your browser's print dialog will open. Select "Save as PDF" as the destination to download your rendered component.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Step 5 - NEW STEP */}
-        <Box sx={{ mb: 4, pl: 2, borderLeft: '2px solid #5850EC' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ 
-              width: 28, 
-              height: 28, 
-              borderRadius: '50%', 
-              bgcolor: '#5850EC', 
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              mr: 2
-            }}>
-              5
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Customise your PDF output
-            </Typography>
-          </Box>
-          
-          <Box sx={{ pl: 5, mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
-              You can customise how your PDF looks by adjusting the print settings:
-            </Typography>
-            
-            <Card variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
-              <Box sx={{ 
-                width: '100%',
-                height: 'auto',
-                backgroundImage: 'url(/printartefact.png)',
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                pt: '75%' // 4:3 aspect ratio
-              }} />
-            </Card>
-            
-            <Typography variant="body2" sx={{ mb: 1, color: '#4a5568' }}>
-              For best results, adjust these settings in the print dialog:
-            </Typography>
-            
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#4a5568', marginBottom: '12px' }}>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
-                <strong>Page Size</strong>: Choose A4, Letter, or other sizes based on your needs
-              </li>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
-                <strong>Scale</strong>: Adjust to fit content appropriately on the page
-              </li>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
-                <strong>Orientation</strong>: Switch between portrait and landscape based on content
-              </li>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
-                <strong>Margins</strong>: Select "None" or "Minimal" for edge-to-edge content
-              </li>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>
-                <strong>Headers and Footers</strong>: Disable these for a cleaner output
-              </li>
-            </ul>
-            
-            <Typography variant="body2" sx={{ color: '#4a5568' }}>
-              The preview in the print dialog will help you see how your PDF will look before saving.
-            </Typography>
-          </Box>
-        </Box>
-
+          {/* Step 5 */}
+          <div className="mb-6">
+            <div className="flex">
+              <div className="mr-4 flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: claudeColors.primary }}>
+                  <span className="text-white font-medium">5</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h6 className="text-lg font-medium mb-2" style={{ color: claudeColors.secondaryDark }}>
+                  Customise your PDF output
+                </h6>
+                <div className="ml-0">
+                  <p className="mb-2" style={{ color: claudeColors.secondary }}>
+                    You can customise how your PDF looks by adjusting the print settings in your browser:
+                  </p>
+                  
+                  <div className="mb-3 overflow-hidden rounded-lg border border-gray-100 shadow-md">
+                    <img 
+                      src="/printartefact.png"
+                      alt="Print settings dialog" 
+                      className="w-full h-auto object-contain"
+                      style={{ maxHeight: '300px' }}
+                    />
+                  </div>
+                  
+                  <div 
+                    className="p-2 rounded-lg mb-2"
+                    style={{ backgroundColor: 'rgba(217,119,87,0.08)' }}
+                  >
+                    <p className="flex items-center mb-1.5 font-medium" style={{ color: claudeColors.primaryDark }}>
+                      <Settings size={16} className="mr-2" />
+                      Recommended settings:
+                    </p>
+                    
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <p className="font-medium" style={{ color: claudeColors.secondary }}>
+                          Page Size:
+                        </p>
+                        <p style={{ color: claudeColors.secondary }}>
+                          A4 or Letter
+                        </p>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <p className="font-medium" style={{ color: claudeColors.secondary }}>
+                          Scale:
+                        </p>
+                        <p style={{ color: claudeColors.secondary }}>
+                          Default or "Fit to page"
+                        </p>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <p className="font-medium" style={{ color: claudeColors.secondary }}>
+                          Orientation:
+                        </p>
+                        <p style={{ color: claudeColors.secondary }}>
+                          Choose based on content
+                        </p>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <p className="font-medium" style={{ color: claudeColors.secondary }}>
+                          Margins:
+                        </p>
+                        <p style={{ color: claudeColors.secondary }}>
+                          None or Minimal
+                        </p>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <p className="font-medium" style={{ color: claudeColors.secondary }}>
+                          Headers and Footers:
+                        </p>
+                        <p style={{ color: claudeColors.secondary }}>
+                          Off
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         {/* Supported Libraries */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: '#2d3748' }}>
+        <div className="mb-5">
+          <h5 className="flex items-center mb-3 text-xl" style={{ color: claudeColors.secondaryDark }}>
+            <BookOpen size={20} className="mr-2" />
             Supported Libraries
-          </Typography>
+          </h5>
           
-          <Typography variant="body2" sx={{ mb: 2, color: '#4a5568' }}>
-            This tool supports the following libraries commonly used in Claude artifacts:
-          </Typography>
-          
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 2 }}>
-            <Card sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>React</Typography>
-              <Typography variant="body2" sx={{ color: '#4a5568', fontSize: '0.8rem' }}>
-                Core library & hooks
-              </Typography>
-            </Card>
-            
-            <Card sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Material UI</Typography>
-              <Typography variant="body2" sx={{ color: '#4a5568', fontSize: '0.8rem' }}>
-                UI components & styling
-              </Typography>
-            </Card>
-            
-            <Card sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Recharts</Typography>
-              <Typography variant="body2" sx={{ color: '#4a5568', fontSize: '0.8rem' }}>
-                Charts & data visualisation
-              </Typography>
-            </Card>
-            
-            <Card sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Lucide Icons</Typography>
-              <Typography variant="body2" sx={{ color: '#4a5568', fontSize: '0.8rem' }}>
-                Beautiful SVG icons
-              </Typography>
-            </Card>
-            
-            <Card sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Lodash</Typography>
-              <Typography variant="body2" sx={{ color: '#4a5568', fontSize: '0.8rem' }}>
-                Utility functions
-              </Typography>
-            </Card>
-            
-            <Card sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Tailwind Classes</Typography>
-              <Typography variant="body2" sx={{ color: '#4a5568', fontSize: '0.8rem' }}>
-                Utility CSS classes
-              </Typography>
-            </Card>
-          </Box>
-        </Box>
-
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {[
+              { name: 'React', desc: 'Core library & hooks' },
+              { name: 'Material UI', desc: 'UI components & styling' },
+              { name: 'Recharts', desc: 'Data visualisation' },
+              { name: 'Lucide Icons', desc: 'SVG icons' },
+              { name: 'Lodash', desc: 'Utility functions' },
+              { name: 'Tailwind', desc: 'Utility CSS classes' }
+            ].map((lib, index) => (
+              <div 
+                key={index} 
+                className="p-2.5 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 border border-gray-100"
+              >
+                <h6 
+                  className="font-semibold mb-0.5 text-sm"
+                  style={{ color: claudeColors.primary }}
+                >
+                  {lib.name}
+                </h6>
+                <p 
+                  className="text-xs"
+                  style={{ color: claudeColors.secondary }}
+                >
+                  {lib.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+        
         {/* Pro Tips */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: '#2d3748' }}>
+        <div className="mb-4">
+          <h5 className="flex items-center mb-3 text-xl" style={{ color: claudeColors.secondaryDark }}>
+            <Star size={20} className="mr-2" />
             Pro Tips
-          </Typography>
+          </h5>
           
-          <Card sx={{ p: 3, bgcolor: '#f7fafc', border: '1px solid #e2e8f0', mb: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: '#2d3748' }}>
-              Ask Claude to create specific components
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#4a5568' }}>
-              You can ask Claude to create React components for various purposes like: dashboards, data visualisations, reports, certificates, invoices, or presentations.
-            </Typography>
-          </Card>
+          <div 
+            className="p-3 mb-3 rounded-lg border-none"
+            style={{ background: 'linear-gradient(135deg, rgba(217,119,87,0.1) 0%, rgba(230,139,111,0.1) 100%)' }}
+          >
+            <div className="flex items-start">
+              <CheckCircle 
+                size={22} 
+                className="mr-3 mt-0.5"
+                style={{ color: claudeColors.primary }} 
+              />
+              <div>
+                <h6 
+                  className="font-semibold mb-1"
+                  style={{ color: claudeColors.secondaryDark }}
+                >
+                  Ask Claude to create specific components
+                </h6>
+                <p style={{ color: claudeColors.secondary }}>
+                  Try asking Claude for dashboards, data visualisations, reports, certificates, invoices, or presentations.
+                </p>
+              </div>
+            </div>
+          </div>
           
-          <Card sx={{ p: 3, bgcolor: '#f7fafc', border: '1px solid #e2e8f0', mb: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: '#2d3748' }}>
-              Component structure requirements
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#4a5568', mb: 1 }}>
-              For best results, make sure your component:
-            </Typography>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#4a5568' }}>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Has all required imports at the top</li>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Is exported as default</li>
-              <li style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Uses supported libraries</li>
-            </ul>
-          </Card>
-        </Box>
-
-        <Divider sx={{ mb: 3 }} />
+          <div 
+            className="p-3 rounded-lg border-none"
+            style={{ background: 'linear-gradient(135deg, rgba(217,119,87,0.1) 0%, rgba(230,139,111,0.1) 100%)' }}
+          >
+            <div className="flex items-start">
+              <CheckCircle 
+                size={22} 
+                className="mr-3 mt-0.5"
+                style={{ color: claudeColors.primary }} 
+              />
+              <div>
+                <h6 
+                  className="font-semibold mb-1"
+                  style={{ color: claudeColors.secondaryDark }}
+                >
+                  Component structure requirements
+                </h6>
+                <p 
+                  className="mb-1.5"
+                  style={{ color: claudeColors.secondary }}
+                >
+                  For best results, ensure your component:
+                </p>
+                <div className="flex flex-wrap gap-1 mb-1">
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded-full mb-1 inline-flex items-center"
+                    style={{ 
+                      backgroundColor: 'rgba(217,119,87,0.2)', 
+                      color: claudeColors.primaryDark 
+                    }}
+                  >
+                    Has all required imports
+                  </span>
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded-full mb-1 inline-flex items-center"
+                    style={{ 
+                      backgroundColor: 'rgba(217,119,87,0.2)', 
+                      color: claudeColors.primaryDark 
+                    }}
+                  >
+                    Is exported as default
+                  </span>
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded-full mb-1 inline-flex items-center"
+                    style={{ 
+                      backgroundColor: 'rgba(217,119,87,0.2)', 
+                      color: claudeColors.primaryDark 
+                    }}
+                  >
+                    Uses supported libraries
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="h-px bg-gray-200 mb-3"></div>
         
         {/* Footer */}
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="body2" sx={{ color: '#718096', mb: 1 }}>
+        <div className="text-center">
+          <p 
+            className="mb-2"
+            style={{ color: claudeColors.secondaryLight }}
+          >
             Get started by replacing this tutorial with your Claude artifact code.
-          </Typography>
-          <Box 
-            component="a"
+          </p>
+          <a
             href="https://claude.ai" 
             target="_blank" 
             rel="noopener noreferrer"
-            sx={{ 
-              display: 'inline-flex', 
-              alignItems: 'center',
-              color: '#5850EC',
-              textDecoration: 'none',
-              fontSize: '0.875rem',
-              '&:hover': { textDecoration: 'underline' }
+            className="inline-flex items-center px-3 py-1 text-sm border rounded-md"
+            style={{
+              color: claudeColors.primary,
+              borderColor: claudeColors.primary,
             }}
           >
-            <span>Visit Claude.ai</span>
-          </Box>
-        </Box>
-      </Paper>
-    </Container>
+            Visit Claude.ai
+            <ExternalLink size={14} className="ml-1" />
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
 
