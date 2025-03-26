@@ -18,6 +18,27 @@ import { Card as ShadcnCard, CardHeader as ShadcnCardHeader, CardFooter as Shadc
 import { Button as ShadcnButton } from "./components/ui/button";
 import { Badge as ShadcnBadge } from "./components/ui/badge";
 
+// Import additional ShadCN components
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
+  DialogTitle, DialogTrigger } from "./components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
+  DropdownMenuTrigger } from "./components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, 
+  SelectValue } from "./components/ui/select";
+import { Input } from "./components/ui/input";
+import { Table, TableBody, TableCaption, TableCell, TableHead, 
+  TableHeader, TableRow } from "./components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
+import { Label } from "./components/ui/label";
+import { Switch } from "./components/ui/switch";
+import { Checkbox } from "./components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar";
+import { Slider } from "./components/ui/slider";
+import { Separator } from "./components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "./components/ui/popover";
+import { Progress } from "./components/ui/progress";
+
 // We'll make these Material UI components available
 import { 
   Button as MuiButton, 
@@ -51,6 +72,97 @@ const CardModule = {
   CardContent: ShadcnCardContent
 };
 
+// Additional ShadCN component modules
+const DialogModule = {
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger
+};
+
+const DropdownMenuModule = {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+};
+
+const TabsModule = {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+};
+
+const SelectModule = {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+};
+
+const InputModule = {
+  Input
+};
+
+const TableModule = {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+};
+
+const AlertModule = {
+  Alert,
+  AlertDescription,
+  AlertTitle
+};
+
+const LabelModule = {
+  Label
+};
+
+const SwitchModule = {
+  Switch
+};
+
+const CheckboxModule = {
+  Checkbox
+};
+
+const AvatarModule = {
+  Avatar,
+  AvatarFallback,
+  AvatarImage
+};
+
+const SliderModule = {
+  Slider
+};
+
+const SeparatorModule = {
+  Separator
+};
+
+const PopoverModule = {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+};
+
+const ProgressModule = {
+  Progress
+};
+
 // Our available modules
 const availableModules = {
   'react': React,
@@ -78,7 +190,23 @@ const availableModules = {
   // ShadCN/UI components with our actual implementations
   '@/components/ui/card': CardModule,
   '@/components/ui/button': ButtonModule,
-  '@/components/ui/badge': BadgeModule
+  '@/components/ui/badge': BadgeModule,
+  // Additional ShadCN components
+  '@/components/ui/dialog': DialogModule,
+  '@/components/ui/dropdown-menu': DropdownMenuModule,
+  '@/components/ui/tabs': TabsModule,
+  '@/components/ui/select': SelectModule,
+  '@/components/ui/input': InputModule,
+  '@/components/ui/table': TableModule,
+  '@/components/ui/alert': AlertModule,
+  '@/components/ui/label': LabelModule,
+  '@/components/ui/switch': SwitchModule,
+  '@/components/ui/checkbox': CheckboxModule,
+  '@/components/ui/avatar': AvatarModule,
+  '@/components/ui/slider': SliderModule,
+  '@/components/ui/separator': SeparatorModule,
+  '@/components/ui/popover': PopoverModule,
+  '@/components/ui/progress': ProgressModule
 };
 
 function App() {
@@ -321,6 +449,107 @@ function App() {
       );
     }
     
+    // Additional ShadCN components
+    if (userImports.has('@/components/ui/dialog')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/dialog['"];?/g,
+        'const { $1 } = shadcnDialog;'
+      );
+    }
+    if (userImports.has('@/components/ui/dropdown-menu')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/dropdown-menu['"];?/g,
+        'const { $1 } = shadcnDropdownMenu;'
+      );
+    }
+    if (userImports.has('@/components/ui/tabs')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/tabs['"];?/g,
+        'const { $1 } = shadcnTabs;'
+      );
+    }
+    if (userImports.has('@/components/ui/select')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/select['"];?/g,
+        'const { $1 } = shadcnSelect;'
+      );
+    }
+    if (userImports.has('@/components/ui/input')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/input['"];?/g,
+        'const { $1 } = shadcnInput;'
+      );
+    }
+    if (userImports.has('@/components/ui/table')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/table['"];?/g,
+        'const { $1 } = shadcnTable;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/alert')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/alert['"];?/g,
+        'const { $1 } = shadcnAlert;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/label')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/label['"];?/g,
+        'const { $1 } = shadcnLabel;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/switch')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/switch['"];?/g,
+        'const { $1 } = shadcnSwitch;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/checkbox')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/checkbox['"];?/g,
+        'const { $1 } = shadcnCheckbox;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/avatar')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/avatar['"];?/g,
+        'const { $1 } = shadcnAvatar;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/slider')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/slider['"];?/g,
+        'const { $1 } = shadcnSlider;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/separator')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/separator['"];?/g,
+        'const { $1 } = shadcnSeparator;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/popover')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/popover['"];?/g,
+        'const { $1 } = shadcnPopover;'
+      );
+    }
+    
+    if (userImports.has('@/components/ui/progress')) {
+      transformedCode = transformedCode.replace(
+        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/progress['"];?/g,
+        'const { $1 } = shadcnProgress;'
+      );
+    }
+    
     // Remove any leftover import lines
     transformedCode = transformedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
     // Remove export default lines
@@ -424,6 +653,21 @@ function App() {
         const shadcnButton = shadcnButtonLib;
         const shadcnBadge = shadcnBadgeLib;
         const shadcnCard = shadcnCardLib;
+        const shadcnDialog = shadcnDialogLib;
+        const shadcnDropdownMenu = shadcnDropdownMenuLib;
+        const shadcnTabs = shadcnTabsLib;
+        const shadcnSelect = shadcnSelectLib;
+        const shadcnInput = shadcnInputLib;
+        const shadcnTable = shadcnTableLib;
+        const shadcnAlert = shadcnAlertLib;
+        const shadcnLabel = shadcnLabelLib;
+        const shadcnSwitch = shadcnSwitchLib;
+        const shadcnCheckbox = shadcnCheckboxLib;
+        const shadcnAvatar = shadcnAvatarLib;
+        const shadcnSlider = shadcnSliderLib;
+        const shadcnSeparator = shadcnSeparatorLib;
+        const shadcnPopover = shadcnPopoverLib;
+        const shadcnProgress = shadcnProgressLib;
         
         // NEW: Use renamed MUI components to avoid conflicts with shadcn
         const {
@@ -453,6 +697,21 @@ function App() {
         'shadcnCardLib',
         'shadcnButtonLib',
         'shadcnBadgeLib',
+        'shadcnDialogLib',
+        'shadcnDropdownMenuLib',
+        'shadcnTabsLib',
+        'shadcnSelectLib',
+        'shadcnInputLib',
+        'shadcnTableLib',
+        'shadcnAlertLib',
+        'shadcnLabelLib',
+        'shadcnSwitchLib',
+        'shadcnCheckboxLib',
+        'shadcnAvatarLib',
+        'shadcnSliderLib',
+        'shadcnSeparatorLib',
+        'shadcnPopoverLib',
+        'shadcnProgressLib',
         wrappedCode
       );
       const execContext: Record<string, any> = {
@@ -476,7 +735,22 @@ function App() {
         availableModules['mathjs'],
         availableModules['@/components/ui/card'],
         availableModules['@/components/ui/button'],
-        availableModules['@/components/ui/badge']
+        availableModules['@/components/ui/badge'],
+        availableModules['@/components/ui/dialog'],
+        availableModules['@/components/ui/dropdown-menu'],
+        availableModules['@/components/ui/tabs'],
+        availableModules['@/components/ui/select'],
+        availableModules['@/components/ui/input'],
+        availableModules['@/components/ui/table'],
+        availableModules['@/components/ui/alert'],
+        availableModules['@/components/ui/label'],
+        availableModules['@/components/ui/switch'],
+        availableModules['@/components/ui/checkbox'],
+        availableModules['@/components/ui/avatar'],
+        availableModules['@/components/ui/slider'],
+        availableModules['@/components/ui/separator'],
+        availableModules['@/components/ui/popover'],
+        availableModules['@/components/ui/progress']
       );
       if (!UserComponent || typeof UserComponent !== 'function') {
         throw new Error('Component not found or not a valid function');
