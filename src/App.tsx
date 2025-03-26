@@ -247,13 +247,13 @@ function App() {
       // ===== STEP 1: EXTRACT COMPONENT INFO =====
       // First, identify the component name and type
       let componentName: string | null = null;
-      let componentTypeStr: string = "unknown";
+      let _componentTypeStr: string = "unknown";
       
       // Check for arrow function components (most common)
       const arrowMatch = code.match(/const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/);
       if (arrowMatch && arrowMatch[1]) {
         componentName = arrowMatch[1];
-        componentTypeStr = "arrow";
+        _componentTypeStr = "arrow";
         console.log(`Found arrow function component: ${componentName}`);
       }
       
@@ -262,7 +262,7 @@ function App() {
         const functionMatch = code.match(/function\s+([A-Z][A-Za-z0-9_]*)\s*\(/);
         if (functionMatch && functionMatch[1]) {
           componentName = functionMatch[1];
-          componentTypeStr = "function";
+          _componentTypeStr = "function";
           console.log(`Found function component: ${componentName}`);
         }
       }
@@ -272,7 +272,7 @@ function App() {
         const exportMatch = code.match(/export\s+default\s+([A-Z][A-Za-z0-9_]*)/);
         if (exportMatch && exportMatch[1]) {
           componentName = exportMatch[1];
-          componentTypeStr = "export";
+          _componentTypeStr = "export";
           console.log(`Found component from export default: ${componentName}`);
         }
       }
