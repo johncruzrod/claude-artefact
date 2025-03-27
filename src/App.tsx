@@ -870,19 +870,6 @@ function App() {
     }
   };
   const showAppUI = true;
-  const sampleButtonStyle: React.CSSProperties = {
-    padding: '0.75rem 1rem',
-    backgroundColor: '#4A5568',
-    color: 'white',
-    border: 'none',
-    borderRadius: '0.375rem',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'background-color 0.2s ease-in-out',
-    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-  };
-  // Add this to your state declarations at the top of the App component
   const [leftPanelWidth, setLeftPanelWidth] = useState(35); // Changed from 40 to 35
   const [isDragging, setIsDragging] = useState(false);
   // Update the event handlers
@@ -964,22 +951,85 @@ function App() {
       `}</style>
       {showAppUI && (
         <>
-          {/* Our custom "header" in the app */}
           <div className="genvise-app-header" style={{ padding: '0.5rem 0' }}>
             <h1 style={{ 
-              margin: '0 0 0.25rem 0',  // Further reduced margin
-              fontSize: '1.5rem'         // Even smaller font size
+              margin: '0 0 0.25rem 0',
+              fontSize: '1.5rem'
             }}>
               Claude Artifact to PDF Converter
             </h1>
             <p style={{ 
-              margin: 0,                 // Removed all margins
-              fontSize: '0.8rem',        // Smaller font size
-              color: '#fff'             // Changed from '#666' to '#fff'
+              margin: 0,
+              fontSize: '0.8rem',
+              color: '#fff'
             }}>
               Paste your Claude artifact code, see it rendered, and download it as a PDF
             </p>
           </div>
+          
+          {/* New samples bar - now centered */}
+          <div style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              maxWidth: '1600px',
+              width: '100%',
+              justifyContent: 'center'
+            }}>
+              <span style={{
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#4a5568'
+              }}>
+                Sample Artifacts:
+              </span>
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem'
+              }}>
+                {[
+                  { id: 1, name: 'Dashboard' },
+                  { id: 2, name: 'Avocado' },
+                  { id: 3, name: 'Pendulum' }
+                ].map((sample) => (
+                  <button
+                    key={sample.id}
+                    onClick={() => loadSampleCode(sample.id)}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      backgroundColor: '#4A5568',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease-in-out',
+                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = '#2D3748';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = '#4A5568';
+                    }}
+                  >
+                    {sample.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <main
             className="main-container"
             style={{
@@ -1184,42 +1234,6 @@ function App() {
                   }}
                 >
                   Download as PDF
-                </button>
-                <button
-                  onClick={() => loadSampleCode(1)}
-                  style={{ ...sampleButtonStyle }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = '#2D3748';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = '#4A5568';
-                  }}
-                >
-                  Sample 1
-                </button>
-                <button
-                  onClick={() => loadSampleCode(2)}
-                  style={{ ...sampleButtonStyle }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = '#2D3748';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = '#4A5568';
-                  }}
-                >
-                  Sample 2
-                </button>
-                <button
-                  onClick={() => loadSampleCode(3)}
-                  style={{ ...sampleButtonStyle }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = '#2D3748';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = '#4A5568';
-                  }}
-                >
-                  Sample 3
                 </button>
               </div>
             </div>
