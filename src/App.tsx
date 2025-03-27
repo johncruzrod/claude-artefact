@@ -1134,7 +1134,7 @@ function App() {
                     Copy
                   </button>
                   <span style={{ fontSize: '0.75rem', color: '#4A5568' }}>
-                    {pdfTipCopied ? 'Copied!' : '"Can you also make it so that when printed each individual component does not break on the printed pages?"'}
+                    {pdfTipCopied ? 'Copied!' : '"Edit the artefact so that components do not overlap over page breaks when printed, but dont put each component on a new page."'}
                   </span>
                 </div>
               </div>
