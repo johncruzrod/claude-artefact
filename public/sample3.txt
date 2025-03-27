@@ -5,129 +5,141 @@ const MASS_COLOURS = ['red', 'blue', 'green', 'orange', 'purple'];
 const MultiPendulum = () => {
   // Number of pendulum masses (points) from 1 to 5
   const [numMasses, setNumMasses] = useState(2);
-
   // For each mass, we store an initial angle (from vertical), rod length, and mass.
-  // (The double pendulum equations use only the first two values.)
   const [angles, setAngles] = useState([Math.PI / 2, Math.PI / 2, Math.PI / 2, Math.PI / 2, Math.PI / 2]);
   const [lengths, setLengths] = useState([80, 80, 80, 80, 80]);
   const [masses, setMasses] = useState([10, 10, 10, 10, 10]);
-
   // Global simulation parameters
   const [gravity, setGravity] = useState(20.);
   const [damping, setDamping] = useState(0.999);
   const [zoom, setZoom] = useState(1);
-
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
-
   // Trails for each mass
   let trails = [];
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-
-    // We'll maintain local arrays for the angles and angular velocities.
-    // For indices 0 and 1 we use the classic double pendulum equations.
-    // For indices >= 2, we update using the simple pendulum formula.
-    let localAngles = [];
-    let localVelocities = [];
-    for (let i = 0; i < numMasses; i++) {
-      localAngles[i] = angles[i];
-      localVelocities[i] = 0;
-    }
-
+    
+    // Local state for simulation
+    let localAngles = [...angles];
+    let localVelocities = Array(numMasses).fill(0);
+    
     // Initialize trails for each mass
     trails = Array.from({ length: numMasses }, () => []);
-
+    
     // Fixed pivot point
     const pivotX = canvas.width / 2;
     const pivotY = canvas.height / 3;
-
     const dt = 0.05;
 
     const animate = () => {
       // Clear the canvas (white background)
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+      
       // We'll compute positions for each mass and store them in an array.
       let positions = [];
-
-      // --- Update for Mass 0 ---
-      if (numMasses > 0) {
-        // For a single mass, treat it as a simple pendulum.
+      
+      // Calculate forces and update for the first mass (simple pendulum)
+      if (numMasses >= 1) {
         if (numMasses === 1) {
+          // Simple pendulum for a single mass
           let acc = -(gravity / (lengths[0] * zoom)) * Math.sin(localAngles[0]);
           localVelocities[0] += acc * dt;
           localAngles[0] += localVelocities[0] * dt;
           localVelocities[0] *= damping;
         }
+        
+        // Position for the first mass
         positions[0] = {
           x: pivotX + lengths[0] * zoom * Math.sin(localAngles[0]),
           y: pivotY + lengths[0] * zoom * Math.cos(localAngles[0])
         };
       }
-
-      // --- Update for Mass 1 (Double Pendulum Equations) ---
+      
+      // Calculate forces and update for the second mass (double pendulum equations)
       if (numMasses >= 2) {
-        // Use the classic double pendulum equations for masses 0 and 1.
+        // Use the classic double pendulum equations for masses 0 and 1
         const m1 = masses[0], m2 = masses[1];
         const l1 = lengths[0] * zoom, l2 = lengths[1] * zoom;
         const a1 = localAngles[0], a2 = localAngles[1];
         const a1Vel = localVelocities[0], a2Vel = localVelocities[1];
-
+        
         const num1 = -gravity * (2 * m1 + m2) * Math.sin(a1);
         const num2 = -m2 * gravity * Math.sin(a1 - 2 * a2);
         const num3 = -2 * Math.sin(a1 - a2) * m2;
         const num4 = a2Vel * a2Vel * l2 + a1Vel * a1Vel * l1 * Math.cos(a1 - a2);
         const den = l1 * (2 * m1 + m2 - m2 * Math.cos(2 * a1 - 2 * a2));
         const a1Acc = (num1 + num2 + num3 * num4) / den;
-
+        
         const num5 = 2 * Math.sin(a1 - a2);
         const num6 = a1Vel * a1Vel * l1 * (m1 + m2);
         const num7 = gravity * (m1 + m2) * Math.cos(a1);
         const num8 = a2Vel * a2Vel * l2 * m2 * Math.cos(a1 - a2);
         const den2 = l2 * (2 * m1 + m2 - m2 * Math.cos(2 * a1 - 2 * a2));
         const a2Acc = (num5 * (num6 + num7 + num8)) / den2;
-
+        
         localVelocities[0] += a1Acc * dt;
         localVelocities[1] += a2Acc * dt;
         localAngles[0] += localVelocities[0] * dt;
         localAngles[1] += localVelocities[1] * dt;
         localVelocities[0] *= damping;
         localVelocities[1] *= damping;
-
-        // Position for mass 1 is computed relative to mass 0.
+        
+        // Position for the second mass (relative to first mass)
         positions[1] = {
           x: positions[0].x + lengths[1] * zoom * Math.sin(localAngles[1]),
           y: positions[0].y + lengths[1] * zoom * Math.cos(localAngles[1])
         };
       }
-
-      // --- Update for Additional Masses (3rd up to numMasses) ---
-      // For indices 2 and above, we update each as a simple pendulum whose pivot is the previous mass.
+      
+      // For pendulums 3 and up, we need a proper n-pendulum approach
+      // that ensures ALL pendulums affect all others in the chain
       for (let i = 2; i < numMasses; i++) {
+        // Initialize acceleration with gravity component
         let acc = -(gravity / (lengths[i] * zoom)) * Math.sin(localAngles[i]);
+        
+        // Now account for the influence of ALL previous pendulums
+        // This ensures pendulum 3 is affected by both pendulums 1 and 2, etc.
+        for (let j = 0; j < i; j++) {
+          // Add influence from pendulum j to pendulum i
+          // The further away in the chain, the less direct influence (via scaling)
+          const influenceFactor = 1.0 / (i - j); // Scaling based on distance in chain
+          
+          // Add influence based on:
+          // 1. Angular velocity of the influencing pendulum
+          // 2. Angle difference to ensure proper directional effect
+          // 3. Length ratio to account for leverage differences
+          acc += influenceFactor * 
+                 localVelocities[j] * localVelocities[j] * 
+                 Math.sin(localAngles[j] - localAngles[i]) * 
+                 (lengths[j] / lengths[i]) * zoom;
+        }
+        
+        // Apply the accumulated acceleration
         localVelocities[i] += acc * dt;
         localAngles[i] += localVelocities[i] * dt;
         localVelocities[i] *= damping;
-
+        
+        // Calculate position (relative to parent)
         positions[i] = {
-          x: positions[i - 1].x + lengths[i] * zoom * Math.sin(localAngles[i]),
-          y: positions[i - 1].y + lengths[i] * zoom * Math.cos(localAngles[i])
+          x: positions[i-1].x + lengths[i] * zoom * Math.sin(localAngles[i]),
+          y: positions[i-1].y + lengths[i] * zoom * Math.cos(localAngles[i])
         };
       }
-
+      
       // --- Draw the fixed pivot ---
       ctx.beginPath();
       ctx.arc(pivotX, pivotY, 5, 0, 2 * Math.PI);
       ctx.fillStyle = 'black';
       ctx.fill();
-
+      
       // --- Draw rods, trails, and masses for each point ---
       for (let i = 0; i < numMasses; i++) {
         const pivotPoint = i === 0 ? { x: pivotX, y: pivotY } : positions[i - 1];
+        
         // Draw rod from pivotPoint to current mass position
         ctx.beginPath();
         ctx.moveTo(pivotPoint.x, pivotPoint.y);
@@ -135,36 +147,41 @@ const MultiPendulum = () => {
         ctx.strokeStyle = '#555';
         ctx.lineWidth = 2;
         ctx.stroke();
-
+        
         // Update and draw trail for mass i
         trails[i].push({ x: positions[i].x, y: positions[i].y });
         if (trails[i].length > 200) trails[i].shift();
+        
         ctx.beginPath();
         for (let j = 0; j < trails[i].length; j++) {
-          ctx.lineTo(trails[i][j].x, trails[i][j].y);
-          ctx.strokeStyle = `rgba(${getRgb(MASS_COLOURS[i])}, ${j / trails[i].length})`;
-          ctx.stroke();
+          if (j === 0) {
+            ctx.moveTo(trails[i][j].x, trails[i][j].y);
+          } else {
+            ctx.lineTo(trails[i][j].x, trails[i][j].y);
+          }
         }
-
+        ctx.strokeStyle = `rgba(${getRgb(MASS_COLOURS[i])}, 0.5)`;
+        ctx.stroke();
+        
         // Draw the mass as a filled circle
         ctx.beginPath();
         ctx.arc(positions[i].x, positions[i].y, 10, 0, 2 * Math.PI);
         ctx.fillStyle = MASS_COLOURS[i];
         ctx.fill();
       }
-
+      
       animationRef.current = requestAnimationFrame(animate);
     };
-
+    
     animate();
-
+    
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
   }, [numMasses, angles, lengths, masses, gravity, damping, zoom]);
-
+  
   // Helper to convert named colours to RGB strings.
   const getRgb = (colorName) => {
     switch (colorName) {
@@ -176,24 +193,26 @@ const MultiPendulum = () => {
       default: return '0,0,0';
     }
   };
-
+  
   // Handlers to update array values for each mass
   const handleAngleChange = (index, value) => {
     const newAngles = [...angles];
     newAngles[index] = parseFloat(value);
     setAngles(newAngles);
   };
+  
   const handleLengthChange = (index, value) => {
     const newLengths = [...lengths];
     newLengths[index] = parseFloat(value);
     setLengths(newLengths);
   };
+  
   const handleMassChange = (index, value) => {
     const newMasses = [...masses];
     newMasses[index] = parseFloat(value);
     setMasses(newMasses);
   };
-
+  
   return (
     <div className="flex">
       {/* Controls Panel (Left) */}

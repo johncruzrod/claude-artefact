@@ -10,6 +10,8 @@ import * as THREE from 'three';
 import * as Tone from 'tone';
 import * as math from 'mathjs';
 import './App.css';
+import { Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // Import the actual ShadCN components using relative paths
 import { Card as ShadcnCard, CardHeader as ShadcnCardHeader, CardFooter as ShadcnCardFooter, 
@@ -951,23 +953,61 @@ function App() {
       `}</style>
       {showAppUI && (
         <>
-          <div className="genvise-app-header" style={{ padding: '0.5rem 0' }}>
-            <h1 style={{ 
-              margin: '0 0 0.25rem 0',
-              fontSize: '1.5rem'
-            }}>
-              Claude Artifact to PDF Converter
-            </h1>
-            <p style={{ 
-              margin: 0,
-              fontSize: '0.8rem',
-              color: '#fff'
-            }}>
-              Paste your Claude artifact code, see it rendered, and download it as a PDF
-            </p>
+          <div className="genvise-app-header" style={{ 
+            padding: '0.5rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ flexGrow: 1, textAlign: 'center', marginRight: '1rem' }}>
+              <h1 style={{ 
+                margin: '0 0 0.25rem 0',
+                fontSize: '1.5rem'
+              }}>
+                Claude Artifact to PDF Converter
+              </h1>
+              <p style={{ 
+                margin: 0,
+                fontSize: '0.8rem',
+                color: '#fff'
+              }}>
+                Paste your Claude artifact code, see it rendered, and download it as a PDF.
+                Your code and outputs are never stored or processed on our servers and remain solely on your computer.{' '}
+                <Link 
+                  to="/privacy" 
+                  style={{
+                    color: '#fff',
+                    textDecoration: 'underline',
+                    fontWeight: 500
+                  }}
+                >
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
+            
+            <Link 
+              to="/info" 
+              title="About this tool"
+              style={{
+                color: '#fff',
+                padding: '0.3rem',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.2s',
+                marginLeft: '1rem',
+                flexShrink: 0
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <Info size={20} />
+            </Link>
           </div>
           
-          {/* New samples bar - now centered */}
+          {/* Samples Bar */}
           <div style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: '#f8fafc',
@@ -975,7 +1015,8 @@ function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '1rem'
+            gap: '1rem',
+            flexWrap: 'wrap'
           }}>
             <div style={{
               display: 'flex',
@@ -1311,7 +1352,17 @@ function App() {
               </a>
             </p>
             <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem' }}>
-              Your code and outputs are never stored or processed on our servers and remain solely on your computer.
+              Your code and outputs are never stored or processed on our servers and remain solely on your computer.{' '}
+              <Link 
+                to="/privacy" 
+                style={{
+                  color: '#D97757',
+                  textDecoration: 'underline',
+                  fontWeight: 500
+                }}
+              >
+                Privacy Policy
+              </Link>
             </p>
           </div>
         </>
