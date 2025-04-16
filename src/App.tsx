@@ -259,13 +259,6 @@ function App() {
       printRoot = ReactDOM.createRoot(componentRef.current);
       printRootRef.current = printRoot;
     }
-    if (previewRoot) {
-      try {
-        renderComponent(previewRoot);
-      } catch (error) {
-        console.error("Initial render error:", error);
-      }
-    }
     return () => {
       if (previewRoot) {
         try {
@@ -285,6 +278,7 @@ function App() {
       printRootRef.current = null;
     };
   }, []);
+
   // Inject a little print CSS
   useEffect(() => {
     const style = document.createElement('style');
@@ -314,53 +308,9 @@ function App() {
       document.head.removeChild(style);
     };
   }, []);
-  // Re-render on code changes
-  useEffect(() => {
-    if (rootRef.current) {
-      try {
-        renderComponent(rootRef.current);
-      } catch (error) {
-        console.error("Error rendering component on code change:", error);
-        setError(`Rendering error: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-  }, [code]);
-  // Add a new useEffect to load the tutorial on component mount
-  useEffect(() => {
-    const loadTutorial = async () => {
-      try {
-        const response = await fetch('/tutorial.txt');
-        if (!response.ok) {
-          throw new Error(`Failed to load tutorial: ${response.statusText}`);
-        }
-        const tutorialCode = await response.text();
-        setCode(tutorialCode);
-        setError(null);
-        setPlaceholderWarning(null);
-      } catch (err) {
-        setError(String(err));
-      }
-    };
-    
-    loadTutorial();
-  }, []);
-  // Load sample code from e.g. public/sample1.txt, public/sample2.txt, ...
-  const loadSampleCode = async (sampleNumber: number) => {
-    try {
-      const response = await fetch(`/sample${sampleNumber}.txt`);
-      if (!response.ok) {
-        throw new Error(`Failed to load sample ${sampleNumber}: ${response.statusText}`);
-      }
-      const sampleCode = await response.text();
-      setCode(sampleCode);
-      setError(null);
-      setPlaceholderWarning(null);
-    } catch (err) {
-      setError(String(err));
-    }
-  };
-  // Preprocess user code: remove/transform imports
-  const preprocessUserCode = (sourceCode: string): string => {
+
+  // Wrap preprocessUserCode in useCallback - moved BEFORE renderComponent
+  const preprocessUserCode = React.useCallback((sourceCode: string): string => {
     setPlaceholderWarning(null);
     const userImports = new Set<string>();
     const importRegex = /import\s+(?:{[^}]*}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
@@ -560,8 +510,10 @@ function App() {
       '// exporting $1'
     );
     return transformedCode;
-  };
-  const renderComponent = (root: ReactDOM.Root) => {
+  }, [setPlaceholderWarning]);
+
+  // Wrap renderComponent in useCallback - moved BEFORE the useEffect that uses it
+  const renderComponent = React.useCallback((root: ReactDOM.Root) => {
     try {
       setError(null);
       let componentName: string | null = null;
@@ -590,6 +542,7 @@ function App() {
           function() {
             return {
               visitor: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 Identifier(path: any) {
                   if (path.node.name === 'development') {
                     path.replaceWith({ type: 'BooleanLiteral', value: true });
@@ -716,6 +669,7 @@ function App() {
         'shadcnProgressLib',
         wrappedCode
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const execContext: Record<string, any> = {
         console: console,
         setTimeout: setTimeout,
@@ -814,8 +768,9 @@ function App() {
         }
       };
       const element = React.createElement(
-        class ErrorBoundary extends React.Component<any, { hasError: boolean; error: Error | null }> {
-          constructor(props: any) {
+        // Use 'object' for props type as suggested by ESLint instead of {}
+        class ErrorBoundary extends React.Component<object, { hasError: boolean; error: Error | null }> {
+          constructor(props: object) {
             super(props);
             this.state = { hasError: false, error: null };
           }
@@ -851,7 +806,56 @@ function App() {
         </div>
       );
     }
+  }, [code, setError, setCurrentComponent, preprocessUserCode]);
+
+  // Re-render on code changes - Now uses the correctly defined renderComponent
+  useEffect(() => {
+    if (rootRef.current) {
+      try {
+        renderComponent(rootRef.current);
+      } catch (error) {
+        console.error("Error rendering component on code change:", error);
+        setError(`Rendering error: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }, [code, renderComponent]);
+
+  // Add a new useEffect to load the tutorial on component mount
+  useEffect(() => {
+    const loadTutorial = async () => {
+      try {
+        const response = await fetch('/tutorial.txt');
+        if (!response.ok) {
+          throw new Error(`Failed to load tutorial: ${response.statusText}`);
+        }
+        const tutorialCode = await response.text();
+        setCode(tutorialCode);
+        setError(null);
+        setPlaceholderWarning(null);
+      } catch (err) {
+        setError(String(err));
+      }
+    };
+    
+    loadTutorial();
+  }, []);
+
+  // Load sample code from e.g. public/sample1.txt, public/sample2.txt, ...
+  const loadSampleCode = async (sampleNumber: number) => {
+    try {
+      const response = await fetch(`/sample${sampleNumber}.txt`);
+      if (!response.ok) {
+        throw new Error(`Failed to load sample ${sampleNumber}: ${response.statusText}`);
+      }
+      const sampleCode = await response.text();
+      setCode(sampleCode);
+      setError(null);
+      setPlaceholderWarning(null);
+    } catch (err) {
+      setError(String(err));
+    }
   };
+
   // Print logic
   const handlePrint = async () => {
     if (!currentComponent || !printRootRef.current) return;
@@ -871,6 +875,7 @@ function App() {
       setError(`Error preparing for print: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
+
   const showAppUI = true;
   const [leftPanelWidth, setLeftPanelWidth] = useState(35); // Changed from 40 to 35
   const [isDragging, setIsDragging] = useState(false);
@@ -903,6 +908,7 @@ function App() {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging]);
+
   return (
     <div
       className="root-container"

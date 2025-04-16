@@ -151,31 +151,6 @@ function PrivacyPolicy() {
             We use Google Analytics solely to understand general usage patterns and improve our service. This data is anonymized and does not include any personal information or code content.
           </p>
         </section>
-
-        <section>
-          <h2 style={{ 
-            fontSize: '1.5rem',
-            fontWeight: 600,
-            marginBottom: '1rem',
-            color: '#374151'
-          }}>Contact</h2>
-          <p style={{ 
-            lineHeight: 1.6,
-            color: '#4b5563'
-          }}>
-            If you have any questions about our privacy practices, please feel free to contact us through our{' '}
-            <Link 
-              to="/info" 
-              style={{
-                color: '#D97757',
-                textDecoration: 'underline',
-                fontWeight: 500
-              }}
-            >
-              About page
-            </Link>.
-          </p>
-        </section>
       </div>
 
       <BubbleBackground />
@@ -271,7 +246,8 @@ function BubbleBackground() {
 
       setBubbles(prevBubbles =>
         prevBubbles.map(bubble => {
-          let { x, y, dx, dy, size } = bubble;
+          const { size } = bubble;
+          let { x, y, dx, dy } = bubble;
 
           const mouseX = mousePos.current.x;
           const mouseY = mousePos.current.y;

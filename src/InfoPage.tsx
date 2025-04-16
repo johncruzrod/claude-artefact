@@ -240,7 +240,8 @@ function BubbleBackground() {
 
       setBubbles(prevBubbles =>
         prevBubbles.map(bubble => {
-          let { x, y, dx, dy, size } = bubble;
+          const { size } = bubble;
+          let { x, y, dx, dy } = bubble;
 
           // Mouse interaction
           const mouseX = mousePos.current.x;
