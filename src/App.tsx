@@ -504,11 +504,17 @@ function App() {
     
     // Remove any leftover import lines
     transformedCode = transformedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
-    // Remove export default lines
+    
+    // Remove export default lines - handle both "export default function ComponentName" and "export default ComponentName"
+    transformedCode = transformedCode.replace(
+      /export\s+default\s+function\s+([A-Za-z0-9_]+)/g,
+      'function $1'
+    );
     transformedCode = transformedCode.replace(
       /export\s+default\s+([A-Za-z0-9_]+);?/g,
       '// exporting $1'
     );
+    
     return transformedCode;
   }, [setPlaceholderWarning]);
 
@@ -516,26 +522,42 @@ function App() {
   const renderComponent = React.useCallback((root: ReactDOM.Root) => {
     try {
       setError(null);
-      let componentName: string | null = null;
-      const arrowMatch = code.match(
-        /const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/
-      );
-      if (arrowMatch && arrowMatch[1]) {
-        componentName = arrowMatch[1];
-      }
-      if (!componentName) {
-        const functionMatch = code.match(/function\s+([A-Z][A-Za-z0-9_]*)\s*\(/);
-        if (functionMatch && functionMatch[1]) {
-          componentName = functionMatch[1];
-        }
-      }
-      if (!componentName) {
-        const exportMatch = code.match(/export\s+default\s+([A-Z][A-Za-z0-9_]*)/);
-        if (exportMatch && exportMatch[1]) {
-          componentName = exportMatch[1];
-        }
-      }
       const processedCode = preprocessUserCode(code);
+      
+      // ADD THIS DEBUGGING CODE:
+      console.log("=== DEBUGGING ===");
+      console.log("Original code (first 200 chars):", code.substring(0, 200));
+      console.log("Processed code (first 500 chars):", processedCode.substring(0, 500));
+      
+      let componentName: string | null = null;
+      
+      // Try multiple patterns for function detection
+      const functionPattern1 = /function\s+([A-Z][A-Za-z0-9_]*)\s*\(/;
+      const functionPattern2 = /const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/;
+      const exportPattern = /\/\/\s*exporting\s+([A-Z][A-Za-z0-9_]*)/;
+      
+      const functionMatch1 = processedCode.match(functionPattern1);
+      const functionMatch2 = processedCode.match(functionPattern2);
+      const exportMatch = processedCode.match(exportPattern);
+      
+      console.log("Function pattern 1 match:", functionMatch1);
+      console.log("Function pattern 2 match:", functionMatch2);
+      console.log("Export pattern match:", exportMatch);
+      
+      if (functionMatch1 && functionMatch1[1]) {
+        componentName = functionMatch1[1];
+        console.log("Found component via function pattern 1:", componentName);
+      } else if (functionMatch2 && functionMatch2[1]) {
+        componentName = functionMatch2[1];
+        console.log("Found component via function pattern 2:", componentName);
+      } else if (exportMatch && exportMatch[1]) {
+        componentName = exportMatch[1];
+        console.log("Found component via export pattern:", componentName);
+      }
+      
+      console.log("Final component name:", componentName);
+      console.log("=== END DEBUGGING ===");
+      
       const transformedCode = Babel.transform(processedCode, {
         presets: ['react'],
         plugins: [
