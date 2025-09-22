@@ -92,8 +92,9 @@ export default defineConfig({
             if (id.includes('axios')) return 'vendor-axios';
             if (id.includes('zustand')) return 'vendor-zustand';
             
-            // Default vendor chunk for remaining libraries
-            return 'vendor';
+            // Default: merge remaining vendor libs into the React core chunk
+            // to avoid cross-chunk cycles that can cause TDZ init errors.
+            return 'vendor-react-core';
           }
           
           // Split app code by features/routes if it gets large
