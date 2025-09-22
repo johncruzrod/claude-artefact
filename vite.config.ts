@@ -34,9 +34,9 @@ export default defineConfig({
       },
       output: {
         manualChunks: (id) => {
-          // Ultra-aggressive chunking to keep files under 25MB
-          if (id.includes('node_modules')) {
-            // Split each major library into its own chunk
+      // Ultra-aggressive chunking to keep files under 25MB
+        if (id.includes('node_modules')) {
+          // Split each major library into its own chunk
             if (id.includes('tone')) return 'vendor-tone';
             if (id.includes('d3')) return 'vendor-d3';
             if (id.includes('recharts')) return 'vendor-recharts';
@@ -46,7 +46,9 @@ export default defineConfig({
             if (id.includes('react-bootstrap')) return 'vendor-bootstrap';
             if (id.includes('lodash')) return 'vendor-lodash';
             if (id.includes('framer-motion')) return 'vendor-framer';
-            if (id.includes('@emotion')) return 'vendor-emotion';
+            // Keep Emotion in the same chunk as core React to avoid TDZ/cycle issues
+            // seen when minified across separate chunks.
+            if (id.includes('@emotion')) return 'vendor-react-core';
             if (id.includes('styled-components')) return 'vendor-styled';
             if (id.includes('@twind')) return 'vendor-twind';
             
@@ -108,21 +110,8 @@ export default defineConfig({
     sourcemap: false,
     // Increase chunk size warning limit but keep it reasonable
     chunkSizeWarningLimit: 2000,
-    // Enable minification for smaller files
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        // Prevent variable hoisting issues
-        hoist_vars: false,
-        // Keep function names to prevent initialization errors
-        keep_fnames: true
-      },
-      mangle: {
-        // Prevent mangling issues that cause initialization errors
-        keep_fnames: true
-      }
-    }
+    // Prefer esbuild minification to avoid rare TDZ/mangling issues with certain
+    // libraries when split across manual chunks (e.g., Emotion).
+    minify: 'esbuild'
   }
 })
