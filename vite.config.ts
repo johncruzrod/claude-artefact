@@ -15,10 +15,23 @@ export default defineConfig({
       '@twind/core',
       '@twind/preset-tailwind',
       '@twind/preset-autoprefix',
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react/jsx-runtime',
     ],
+    exclude: [
+      // Prevent React internals from being pre-bundled incorrectly
+      'react/jsx-dev-runtime'
+    ]
   },
   build: {
     rollupOptions: {
+      // Ensure React internals are handled correctly
+      external: () => {
+        // Don't externalize anything - we want everything bundled
+        return false;
+      },
       output: {
         manualChunks: (id) => {
           // Ultra-aggressive chunking to keep files under 25MB
@@ -57,13 +70,14 @@ export default defineConfig({
             // Group Radix UI components
             if (id.includes('@radix-ui')) return 'vendor-radix';
             
-            // Core React ecosystem
-            if (id.includes('react-dom')) return 'vendor-react-dom';
+            // Core React ecosystem - Keep React and React-DOM together for React 19 compatibility
+            if (id.includes('react-dom') || (id.includes('react') && !id.includes('react-'))) {
+              return 'vendor-react-core';
+            }
             if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('react-redux')) return 'vendor-redux';
             if (id.includes('react-query')) return 'vendor-query';
             if (id.includes('react-hook-form')) return 'vendor-forms';
-            if (id.includes('react') && !id.includes('react-')) return 'vendor-react';
             
             // Smaller utilities
             if (id.includes('lucide-react')) return 'vendor-lucide';
