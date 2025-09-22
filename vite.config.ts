@@ -21,10 +21,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // More granular chunking based on file paths and modules
+          // Ultra-aggressive chunking to keep files under 25MB
           if (id.includes('node_modules')) {
             // Split each major library into its own chunk
-            if (id.includes('three')) return 'vendor-three';
             if (id.includes('tone')) return 'vendor-tone';
             if (id.includes('d3')) return 'vendor-d3';
             if (id.includes('recharts')) return 'vendor-recharts';
@@ -33,29 +32,27 @@ export default defineConfig({
             if (id.includes('antd')) return 'vendor-antd';
             if (id.includes('react-bootstrap')) return 'vendor-bootstrap';
             if (id.includes('lodash')) return 'vendor-lodash';
-            if (id.includes('mathjs')) return 'vendor-mathjs';
             if (id.includes('framer-motion')) return 'vendor-framer';
             if (id.includes('@emotion')) return 'vendor-emotion';
             if (id.includes('styled-components')) return 'vendor-styled';
-            if (id.includes('@babel/standalone')) return 'vendor-babel';
-            if (id.includes('@codesandbox/sandpack')) return 'vendor-sandpack';
             if (id.includes('@twind')) return 'vendor-twind';
             
-            // Group React Icons into smaller chunks by icon family
-            if (id.includes('react-icons/fa')) return 'icons-fa';
-            if (id.includes('react-icons/md')) return 'icons-md';
-            if (id.includes('react-icons/hi')) return 'icons-hi';
-            if (id.includes('react-icons/ai')) return 'icons-ai';
-            if (id.includes('react-icons/bi')) return 'icons-bi';
-            if (id.includes('react-icons/bs')) return 'icons-bs';
-            if (id.includes('react-icons/fi')) return 'icons-fi';
-            if (id.includes('react-icons/gi')) return 'icons-gi';
-            if (id.includes('react-icons/go')) return 'icons-go';
-            if (id.includes('react-icons/io')) return 'icons-io';
-            if (id.includes('react-icons/ri')) return 'icons-ri';
-            if (id.includes('react-icons/si')) return 'icons-si';
-            if (id.includes('react-icons/ti')) return 'icons-ti';
-            if (id.includes('react-icons')) return 'icons-other';
+            // Split Babel standalone into smaller chunks if possible
+            if (id.includes('@babel/standalone')) {
+              // Try to split babel by internal modules
+              if (id.includes('parser')) return 'babel-parser';
+              if (id.includes('generator')) return 'babel-generator';
+              if (id.includes('traverse')) return 'babel-traverse';
+              if (id.includes('types')) return 'babel-types';
+              if (id.includes('template')) return 'babel-template';
+              if (id.includes('preset')) return 'babel-presets';
+              if (id.includes('plugin')) return 'babel-plugins';
+              return 'babel-core';
+            }
+            
+            if (id.includes('@codesandbox/sandpack')) return 'vendor-sandpack';
+            
+            // React Icons removed - using Lucide React instead (5,295+ icons)
             
             // Group Radix UI components
             if (id.includes('@radix-ui')) return 'vendor-radix';

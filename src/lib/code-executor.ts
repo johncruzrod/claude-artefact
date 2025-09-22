@@ -195,17 +195,10 @@ function createRequire(registry: ModuleRegistry, runtimeWindow?: Window | null) 
     } else if (id.startsWith("@tanstack/react-query")) {
       resolved = registry["@tanstack/react-query"];
     } else if (id.startsWith("react-icons/")) {
-      // Popular react-icons subpaths
-      const pack = id as
-        | "react-icons/ai" | "react-icons/bi" | "react-icons/bs" | "react-icons/ci"
-        | "react-icons/cg" | "react-icons/di" | "react-icons/fa" | "react-icons/fa6"
-        | "react-icons/fi" | "react-icons/gi" | "react-icons/go" | "react-icons/gr"
-        | "react-icons/hi" | "react-icons/hi2" | "react-icons/im" | "react-icons/io"
-        | "react-icons/io5" | "react-icons/lia" | "react-icons/lu" | "react-icons/md"
-        | "react-icons/pi" | "react-icons/ri" | "react-icons/rx" | "react-icons/si"
-        | "react-icons/sl" | "react-icons/tb" | "react-icons/tfi" | "react-icons/ti"
-        | "react-icons/vsc" | "react-icons/wi";
-      resolved = (registry as Record<string, unknown>)[pack] ?? registry["react-icons"];      
+      throw new UserCodeError(
+        `React Icons (${id}) not supported to reduce bundle size`,
+        "Use Lucide React instead - it has 5,295+ icons including all common ones: import { IconName } from 'lucide-react'"
+      );      
     } else if (id.startsWith("lucide-react")) {
       resolved = registry["lucide-react"];
     } else if (id.startsWith("@hookform/resolvers/")) {

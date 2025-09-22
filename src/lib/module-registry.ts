@@ -12,8 +12,9 @@ import * as LucideIcons from "lucide-react";
 import * as Recharts from "recharts";
 import * as Lodash from "lodash";
 import * as D3 from "d3";
-import * as Three from "three";
-import * as MathJs from "mathjs";
+// Three.js and MathJS will be loaded dynamically for components that need them
+// import * as Three from "three";
+// import * as MathJs from "mathjs";
 import * as ReactHookForm from "react-hook-form";
 import * as HookFormResolvers from "@hookform/resolvers";
 import { z } from "zod";
@@ -36,38 +37,7 @@ import * as ChakraUI from "@chakra-ui/react";
 import * as AntDesign from "antd";
 import * as ReactBootstrap from "react-bootstrap";
 import * as Tone from "tone";
-// React Icons popular packs
-import * as ReactIcons from "react-icons";
-import * as ReactIconsAi from "react-icons/ai";
-import * as ReactIconsBi from "react-icons/bi";
-import * as ReactIconsBs from "react-icons/bs";
-import * as ReactIconsCi from "react-icons/ci";
-import * as ReactIconsCg from "react-icons/cg";
-import * as ReactIconsDi from "react-icons/di";
-import * as ReactIconsFa from "react-icons/fa";
-import * as ReactIconsFa6 from "react-icons/fa6";
-import * as ReactIconsFi from "react-icons/fi";
-import * as ReactIconsGi from "react-icons/gi";
-import * as ReactIconsGo from "react-icons/go";
-import * as ReactIconsGr from "react-icons/gr";
-import * as ReactIconsHi from "react-icons/hi";
-import * as ReactIconsHi2 from "react-icons/hi2";
-import * as ReactIconsIm from "react-icons/im";
-import * as ReactIconsIo from "react-icons/io";
-import * as ReactIconsIo5 from "react-icons/io5";
-import * as ReactIconsLia from "react-icons/lia";
-import * as ReactIconsLu from "react-icons/lu";
-import * as ReactIconsMd from "react-icons/md";
-import * as ReactIconsPi from "react-icons/pi";
-import * as ReactIconsRi from "react-icons/ri";
-import * as ReactIconsRx from "react-icons/rx";
-import * as ReactIconsSi from "react-icons/si";
-import * as ReactIconsSl from "react-icons/sl";
-import * as ReactIconsTb from "react-icons/tb";
-import * as ReactIconsTfi from "react-icons/tfi";
-import * as ReactIconsTi from "react-icons/ti";
-import * as ReactIconsVsc from "react-icons/vsc";
-import * as ReactIconsWi from "react-icons/wi";
+// Lucide React provides 5,295+ icons - that's plenty!
 // Utility functions
 import { cn } from "../lib/utils";
 
@@ -122,43 +92,12 @@ export function createModuleRegistry(): ModuleRegistry {
     antd: AntDesign,
     "react-bootstrap": ReactBootstrap,
     tone: Tone,
-    "react-icons": ReactIcons,
-    "react-icons/ai": ReactIconsAi,
-    "react-icons/bi": ReactIconsBi,
-    "react-icons/bs": ReactIconsBs,
-    "react-icons/ci": ReactIconsCi,
-    "react-icons/cg": ReactIconsCg,
-    "react-icons/di": ReactIconsDi,
-    "react-icons/fa": ReactIconsFa,
-    "react-icons/fa6": ReactIconsFa6,
-    "react-icons/fi": ReactIconsFi,
-    "react-icons/gi": ReactIconsGi,
-    "react-icons/go": ReactIconsGo,
-    "react-icons/gr": ReactIconsGr,
-    "react-icons/hi": ReactIconsHi,
-    "react-icons/hi2": ReactIconsHi2,
-    "react-icons/im": ReactIconsIm,
-    "react-icons/io": ReactIconsIo,
-    "react-icons/io5": ReactIconsIo5,
-    "react-icons/lia": ReactIconsLia,
-    "react-icons/lu": ReactIconsLu,
-    "react-icons/md": ReactIconsMd,
-    "react-icons/pi": ReactIconsPi,
-    "react-icons/ri": ReactIconsRi,
-    "react-icons/rx": ReactIconsRx,
-    "react-icons/si": ReactIconsSi,
-    "react-icons/sl": ReactIconsSl,
-    "react-icons/tb": ReactIconsTb,
-    "react-icons/tfi": ReactIconsTfi,
-    "react-icons/ti": ReactIconsTi,
-    "react-icons/vsc": ReactIconsVsc,
-    "react-icons/wi": ReactIconsWi,
     recharts: Recharts,
     lodash: Lodash,
     "lodash-es": Lodash,
     d3: D3,
-    three: Three,
-    mathjs: MathJs,
+    // three: Three,  // Loaded dynamically
+    // mathjs: MathJs,  // Loaded dynamically
     "react-hook-form": ReactHookForm,
     "@hookform/resolvers": HookFormResolvers,
     "@hookform/resolvers/zod": { zodResolver },
