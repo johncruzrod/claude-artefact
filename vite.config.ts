@@ -77,14 +77,18 @@ export default defineConfig({
             if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('react-redux')) return 'vendor-redux';
             if (id.includes('react-query')) return 'vendor-query';
-            if (id.includes('react-hook-form')) return 'vendor-forms';
+            // Split form libraries separately to avoid circular dependencies
+            if (id.includes('react-hook-form')) return 'vendor-react-hook-form';
+            if (id.includes('@hookform/resolvers')) return 'vendor-hookform-resolvers';
+            if (id.includes('formik')) return 'vendor-formik';
+            if (id.includes('yup')) return 'vendor-yup';
+            if (id.includes('zod')) return 'vendor-zod';
             
             // Smaller utilities
             if (id.includes('lucide-react')) return 'vendor-lucide';
             if (id.includes('clsx') || id.includes('classnames')) return 'vendor-utils';
             if (id.includes('axios')) return 'vendor-axios';
             if (id.includes('zustand')) return 'vendor-zustand';
-            if (id.includes('formik') || id.includes('yup') || id.includes('zod')) return 'vendor-validation';
             
             // Default vendor chunk for remaining libraries
             return 'vendor';
@@ -109,7 +113,15 @@ export default defineConfig({
     terserOptions: {
       compress: {
         drop_console: true,
-        drop_debugger: true
+        drop_debugger: true,
+        // Prevent variable hoisting issues
+        hoist_vars: false,
+        // Keep function names to prevent initialization errors
+        keep_fnames: true
+      },
+      mangle: {
+        // Prevent mangling issues that cause initialization errors
+        keep_fnames: true
       }
     }
   }
