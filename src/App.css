@@ -1,238 +1,458 @@
 :root {
-  /* Basic colour variables, adjust as you like */
-  --primary-color: #D97757;
-  --primary-dark: #C65D3D;
-  --primary-light: #E68B6F;
-  --background-color: #f7fafc;
-  --text-color: #333;
-  --border-color: #ddd;
-  --header-bg1: #D97757;
-  --header-bg2: #E68B6F;
-  --header-bg3: #F2A48D;
-  --error-color: #c62828;
-  --error-bg: #ffebee;
-  --light-bg: #f7fafc; /* or #f5f5f7, etc. */
+  --surface-gradient: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  --header-gradient: linear-gradient(135deg, #d97757 0%, #de8a5f 45%, #f1b09a 100%);
+  --card-bg: #ffffff;
+  --card-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --text-main: #1f2937;
+  --text-muted: #4b5563;
+  --accent: #d97757;
+  --accent-dark: #c65d3d;
+  --success: #16a34a;
+  --error: #dc2626;
+  --code-bg: #0f172a;
+  --code-border: rgba(148, 163, 184, 0.35);
 }
-/* Reset */
+
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
+
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--background-color); /* The main page background when not printing */
   margin: 0;
   min-height: 100vh;
-}
-/* Container that holds everything */
-.root-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  height: 100vh;
+  font-family: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background: var(--surface-gradient);
   overflow: hidden;
 }
-/* Our own "header" (instead of styling <header> directly) */
-.genvise-app-header, .app-header {
-  background: linear-gradient(
-    135deg,
-    var(--header-bg1) 0%,
-    var(--header-bg2) 40%,
-    var(--header-bg3) 100%
-  );
-  color: white;
-  padding: 1.5rem;
-  text-align: center;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-              0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  flex-shrink: 0;
+
+a {
+  color: inherit;
 }
-.app-header h1 {
-  margin: 0 0 0.5rem;
-  font-size: 2.25rem;
+
+a:hover {
+  text-decoration: none;
+}
+
+.app-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-header {
+  background: var(--header-gradient);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 12px 24px rgba(217, 119, 87, 0.18);
+}
+
+.app-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-header__headline {
+  margin: 0;
+  font-size: 1.9rem;
   font-weight: 700;
 }
-.app-header p {
+
+.app-header__subtitle {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   opacity: 0.9;
+  max-width: 720px;
+  text-align: right;
 }
-/* Main area container (instead of styling <main>) */
-.app-main {
-  display: flex;
-  flex-direction: row;
-  flex: 1 0 auto;
-  padding: 1.5rem;
+
+.app-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 1.5rem;
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 0; /* Let children shrink without pushing the footer away */
+  padding: 1.5rem 1.75rem 1.75rem;
+  min-height: 0;
+  height: calc(100vh - 72px);
   overflow: hidden;
 }
-/* Left and right panels if needed */
-.left-panel,
-.right-panel {
+
+.app-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  box-shadow: var(--card-shadow);
+  border-radius: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.column-scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 0.45rem;
+  height: 100%;
+}
+
+.editor-card {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.metrics-card,
+.alert-card {
+  flex: 0 0 auto;
+}
+
+.editor-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.editor-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.editor-toolbar__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.editor-toolbar__group .ui-button {
+  font-weight: 500;
+}
+
+/* Button and icon fixes */
+.editor-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.editor-toolbar button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.preview-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.preview-actions button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Ensure icons are properly displayed */
+svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+
+.editor-toolbar__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.code-editor {
+  border-radius: 1rem;
+  width: 100%;
+  height: 80%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", Menlo, monospace;
+  padding: 16px;
+  resize: none;
+  outline: none;
+  overflow: auto;
+}
+
+.editor-footer {
+  display: flex;
+  gap: 1.25rem;
+  justify-content: flex-end;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: auto;
+}
+
+.editor-footer__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.app-card .alert {
+  border-radius: 1.1rem;
+}
+
+
+.preview-card {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.preview-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.preview-pane {
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+  min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-/* Section titles are now scoped to prevent affecting user components */
-.genvise-section-title {
-  margin: 0 0 1rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #4a5568;
-}
-/* A container for the code editor or text area */
-.editor-box {
-  position: relative;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background-color: white;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
-              0 1px 2px 0 rgba(0, 0, 0, 0.06);
+
+.preview-frame {
+  width: 100%;
   flex: 1;
+  min-height: 0;
+  border: none;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
 }
-.editor-box textarea {
+
+.preview-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+}
+
+.preview-placeholder__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(217, 119, 87, 0.16);
+  color: var(--accent);
+}
+
+.preview-placeholder h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.preview-placeholder p {
+  margin: 0;
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+.preview-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 0.9rem;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: var(--error);
+}
+
+.preview-error__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.preview-error__details {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #b91c1c;
+}
+
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.preview-footer {
+  margin-top: auto;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.65rem;
+}
+
+.status-badge--idle {
+  background: rgba(100, 116, 139, 0.16);
+  color: #334155;
+}
+
+.status-badge--rendering {
+  background: rgba(59, 130, 246, 0.18);
+  color: #1d4ed8;
+}
+
+.status-badge--ready {
+  background: rgba(16, 185, 129, 0.18);
+  color: #0f766e;
+}
+
+.status-badge--error {
+  background: rgba(220, 38, 38, 0.18);
+  color: #b91c1c;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.app-footer {
+  display: none;
+}
+
+.print-surface {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
   width: 100%;
   height: 100%;
-  padding: 1rem;
-  font-size: 0.875rem;
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Consolas, Liberation Mono, Menlo, monospace;
   border: none;
-  resize: none;
-  outline: none;
-  overflow-y: auto;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: #f8fafc;
-}
-/* Error message styling */
-.error-message {
-  margin-top: 1rem;
-  color: #e53e3e;
-  padding: 0.75rem;
-  border: 1px solid #fed7d7;
-  border-radius: 0.375rem;
-  background-color: #fff5f5;
-  font-size: 0.875rem;
-}
-/* Button group near the bottom of the left panel, for example */
-.button-group {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-/* A basic "Download as PDF" style or sample button style */
-.app-button {
-  padding: 0.75rem 1.5rem;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
-              0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-.app-button:hover {
-  background-color: var(--primary-dark);
-}
-.app-button:disabled {
-  cursor: not-allowed;
-  background-color: #e2e8f0;
-  color: #fff;
-}
-/* The right panel's preview container */
-.genvise-preview-container {
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  overflow: auto;
-  background-color: white;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
-              0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  flex: 1;
-}
-/* The app footer (instead of <footer>) */
-.app-footer, .genvise-app-footer {
-  margin-top: auto;
-  padding: 1rem;
-  text-align: center;
-  border-top: 1px solid var(--border-color);
-  background-color: white; /* or #fafafa if you want a slightly different tone */
-  font-size: 0.875rem;
-  flex-shrink: 0;
-}
-.app-footer p {
-  margin: 0.5rem 0 0 0;
-  color: #718096;
-  font-size: 0.75rem;
-}
-/* The link in the footer, for example */
-.app-footer a {
-  color: var(--primary-color);
-  text-decoration: none;
-  font-weight: 500;
-}
-.app-footer a:hover {
-  color: var(--primary-dark);
-}
-/* The hidden container for printing only */
-#print-container {
-  width: 100%;
-  min-height: 100vh;
-  padding: 1.5rem;
-  background-color: white;
-  position: absolute;
-  left: -9999px;
-  top: 0;
   visibility: hidden;
 }
-/* Let print container render the user component as-is without app styles */
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .app-main {
-    flex-direction: column !important;
+
+.print-wrapper {
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .app-body {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    height: auto;
   }
-  .left-panel,
-  .right-panel {
-    width: 100% !important;
-    min-width: 0 !important;
+
+  .column-scroll {
+    height: auto;
   }
-  .root-container {
-    overflow: auto !important;
-    height: auto !important;
+
+  .preview-pane,
+  .preview-frame,
+  .preview-placeholder {
+    min-height: 360px;
   }
 }
-/* 
-  -- PRINT STYLES --
-  We remove or override any background color from the app's container 
-  so the final PDF has no grey fill 
-*/
-@media print {
-  html,
-  body,
-  .root-container,
-  #print-container {
-    background: none !important;
-    background-color: transparent !important; /* translucent/no colour */
-  }
+
+@media (max-width: 768px) {
   .app-header {
-    background: none !important;
-    background-color: transparent !important;
-    color: #000 !important; /* or keep white text if you prefer, but often black is better for print */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
-  .app-footer {
-    background-color: transparent !important;
-    color: #000 !important; /* or something neutral for print */
+
+  .app-header__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .app-body {
+    padding: 1.25rem;
+  }
+
+  .app-header__links {
+    align-self: flex-start;
+  }
+
+  .preview-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }

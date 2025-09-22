@@ -1,1418 +1,1227 @@
-import { useState, useRef, useEffect } from 'react';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom/client';
-import * as Babel from '@babel/standalone';
-import * as LucideIcons from 'lucide-react';
-import * as Recharts from 'recharts';
-import * as _ from 'lodash';
-import * as d3 from 'd3';
-import * as THREE from 'three';
-import * as Tone from 'tone';
-import * as math from 'mathjs';
-import './App.css';
-import { Info } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-// Import the actual ShadCN components using relative paths
-import { Card as ShadcnCard, CardHeader as ShadcnCardHeader, CardFooter as ShadcnCardFooter, 
-  CardTitle as ShadcnCardTitle, CardDescription as ShadcnCardDescription, 
-  CardContent as ShadcnCardContent } from "./components/ui/card";
-import { Button as ShadcnButton } from "./components/ui/button";
-import { Badge as ShadcnBadge } from "./components/ui/badge";
-
-// Import additional ShadCN components
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
-  DialogTitle, DialogTrigger } from "./components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger } from "./components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, 
-  SelectValue } from "./components/ui/select";
-import { Input } from "./components/ui/input";
-import { Table, TableBody, TableCaption, TableCell, TableHead, 
-  TableHeader, TableRow } from "./components/ui/table";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ErrorInfo,
+} from "react";
+import { createRoot, type Root } from "react-dom/client";
+import {
+  AlertCircle,
+  BarChart3,
+  FileDown,
+  History,
+  QrCode,
+  Sparkles,
+  Waves,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./components/ui/card";
+import { Button } from "./components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
-import { Label } from "./components/ui/label";
-import { Switch } from "./components/ui/switch";
-import { Checkbox } from "./components/ui/checkbox";
-import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar";
-import { Slider } from "./components/ui/slider";
-import { Separator } from "./components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "./components/ui/popover";
-import { Progress } from "./components/ui/progress";
+import { createModuleRegistry } from "./lib/module-registry";
+import {
+  executeUserCode,
+  type RenderableComponent,
+  type ExecutionResult,
+  UserCodeError,
+} from "./lib/code-executor";
+import { useDebouncedValue } from "./hooks/useDebouncedValue";
+import "./App.css";
+import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+import { StyleSheetManager } from "styled-components";
+import { Provider as ReduxProvider } from "react-redux";
+import { createStore } from "redux";
+import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ChakraProvider } from "@chakra-ui/react";
+// Twind v1 (Tailwind-in-JS) to support utility classes inside the iframe without CDN
+import { twind as twCreate, cssom as twCssom, observe as twObserve } from "@twind/core";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - presets are CJS/loose typings
+import presetTailwindMod from "@twind/preset-tailwind";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import presetAutoprefixMod from "@twind/preset-autoprefix";
 
-// We'll make these Material UI components available
-import { 
-  Button as MuiButton, 
-  Container, 
-  Card as MuiCard, 
-  Grid, 
-  Box, 
-  Typography, 
-  TextField,
-  Paper,
-  List,
-  ListItem,
-  Divider 
-} from '@mui/material';
+const TWIND_STYLE_ATTR = "data-twind";
 
-// Create module objects for ShadCN paths - using the actual components now
-const ButtonModule = {
-  Button: ShadcnButton
+const FrameStyleProviders = ({
+  targetDocument,
+  cacheKey,
+  children,
+}: {
+  targetDocument: Document | null;
+  cacheKey: string;
+  children: React.ReactNode;
+}) => {
+  const cache = React.useMemo(() => {
+    if (!targetDocument) return null;
+    return createCache({ key: cacheKey, container: targetDocument.head });
+  }, [cacheKey, targetDocument]);
+
+  const styledTarget = targetDocument?.head ?? undefined;
+
+  if (!cache) return <>{children}</>;
+
+  return (
+    <CacheProvider value={cache}>
+      <StyleSheetManager target={styledTarget}>{children}</StyleSheetManager>
+    </CacheProvider>
+  );
 };
 
-const BadgeModule = {
-  Badge: ShadcnBadge
+const RuntimeProviders = ({ children }: { children: React.ReactNode }) => {
+  const storeRef = React.useRef<ReturnType<typeof createStore>>(null);
+  const queryRef = React.useRef<QueryClient>(null);
+
+  if (!storeRef.current) {
+    // minimal no-op redux store to prevent hook crashes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reducer = (state: any = {}) => state;
+    storeRef.current = createStore(reducer);
+  }
+  if (!queryRef.current) {
+    queryRef.current = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+  }
+
+  return (
+    <MemoryRouter>
+      <ReduxProvider store={storeRef.current}>
+        <QueryClientProvider client={queryRef.current}>
+          <ChakraProvider>{children}</ChakraProvider>
+        </QueryClientProvider>
+      </ReduxProvider>
+    </MemoryRouter>
+  );
 };
 
-const CardModule = {
-  Card: ShadcnCard,
-  CardHeader: ShadcnCardHeader, 
-  CardFooter: ShadcnCardFooter,
-  CardTitle: ShadcnCardTitle,
-  CardDescription: ShadcnCardDescription,
-  CardContent: ShadcnCardContent
+// Intentionally do not sync host styles into the preview/print frames
+// to keep the rendered component isolated and accurate to user code.
+const syncDocumentStyles = () => {
+  return;
 };
 
-// Additional ShadCN component modules
-const DialogModule = {
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger
+// Install Twind into a given iframe document to render Tailwind utility classes at runtime.
+const twindInstalledDocs = new WeakSet<Document>();
+const twInstances = new WeakMap<Document, (cn: string) => string>();
+function ensureTwind(doc: Document | null): ((cn: string) => string) | null {
+  if (!doc) return null;
+  if (twInstances.has(doc)) return twInstances.get(doc)!;
+  try {
+    const head = doc.head || doc.getElementsByTagName("head")[0];
+    if (!head) return null;
+    
+    // Create a <style> tag in the iframe document and use its CSSStyleSheet for cssom
+    const styleEl = doc.createElement("style");
+    styleEl.setAttribute(TWIND_STYLE_ATTR, "true");
+    head.appendChild(styleEl);
+    
+    const cssSheet = (styleEl.sheet as CSSStyleSheet) || (doc as unknown as { styleSheets: CSSStyleSheet[] }).styleSheets?.[doc.styleSheets.length - 1];
+    if (!cssSheet) return null;
+    
+    const sheet = twCssom(cssSheet);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const presetTailwind = (presetTailwindMod as any).default ?? presetTailwindMod;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const presetAutoprefix = (presetAutoprefixMod as any).default ?? presetAutoprefixMod;
+    
+    const tw = twCreate({ 
+      presets: [presetAutoprefix(), presetTailwind()], 
+      preflight: false,
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            destructive: {
+              DEFAULT: "hsl(var(--destructive))",
+              foreground: "hsl(var(--destructive-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            accent: {
+              DEFAULT: "hsl(var(--accent))",
+              foreground: "hsl(var(--accent-foreground))",
+            },
+            popover: {
+              DEFAULT: "hsl(var(--popover))",
+              foreground: "hsl(var(--popover-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+          },
+        }
+      }
+    }, sheet);
+    
+    // Observe the entire document to generate CSS for class attributes as they change
+    if (doc.documentElement) {
+      twObserve(tw, doc.documentElement);
+    }
+    
+    // Mark to avoid duplicate installs
+    twindInstalledDocs.add(doc);
+    twInstances.set(doc, tw);
+    return tw;
+  } catch (error) {
+    console.warn("Failed to initialize Twind in iframe", error);
+    return null;
+  }
+}
+
+function seedTwindStyles(doc: Document | null) {
+  if (!doc) return;
+  const tw = twInstances.get(doc) ?? ensureTwind(doc);
+  if (!tw) return;
+  try {
+    const els = doc.querySelectorAll("[class]");
+    for (const el of Array.from(els)) {
+      const cn = (el as HTMLElement).getAttribute("class") || "";
+      if (cn) tw(cn);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+const buildFrameDocument = ({ padded }: { padded: boolean }): string => {
+  const padding = padded ? "padding: 28px 32px 32px 32px;" : "padding: 16px;";
+  return `<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      *, *::before, *::after { 
+        box-sizing: border-box; 
+      }
+      html, body { 
+        height: 100%; 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #ffffff;
+        color: #111827;
+        line-height: 1.5;
+        ${padding}
+      }
+      a { color: inherit; }
+      #root {
+        min-height: calc(100vh - 2px);
+        display: block;
+      }
+      .print-wrapper {
+        display: block;
+      }
+      
+      /* Ensure charts render properly in PDF */
+      svg {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+      
+      .recharts-wrapper {
+        width: 100% !important;
+      }
+      
+      .recharts-surface {
+        overflow: visible !important;
+      }
+      
+      /* Shadcn/UI CSS Variables */
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222.2 84% 4.9%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 210 40% 96%;
+        --accent-foreground: 222.2 84% 4.9%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 222.2 84% 4.9%;
+        --radius: 0.5rem;
+      }
+      
+      /* Comprehensive Tailwind CSS utilities */
+      
+      /* Background Colors */
+      .bg-gray-50 { background-color: #f9fafb; }
+      .bg-gray-100 { background-color: #f3f4f6; }
+      .bg-white { background-color: #ffffff; }
+      .bg-yellow-500 { background-color: #eab308; }
+      .bg-blue-500 { background-color: #3b82f6; }
+      .bg-blue-600 { background-color: #2563eb; }
+      .bg-green-500 { background-color: #22c55e; }
+      .bg-orange-500 { background-color: #f97316; }
+      .bg-blue-50 { background-color: #eff6ff; }
+      .bg-green-50 { background-color: #f0fdf4; }
+      .bg-yellow-50 { background-color: #fefce8; }
+      .bg-red-50 { background-color: #fef2f2; }
+      
+      /* Text Colors */
+      .text-white { color: #ffffff; }
+      .text-gray-900 { color: #111827; }
+      .text-gray-800 { color: #1f2937; }
+      .text-gray-700 { color: #374151; }
+      .text-gray-600 { color: #4b5563; }
+      .text-blue-900 { color: #1e3a8a; }
+      .text-blue-800 { color: #1e40af; }
+      
+      /* Spacing - Padding */
+      .p-1 { padding: 0.25rem; }
+      .p-2 { padding: 0.5rem; }
+      .p-3 { padding: 0.75rem; }
+      .p-4 { padding: 1rem; }
+      .p-6 { padding: 1.5rem; }
+      .p-8 { padding: 2rem; }
+      .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+      .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+      .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+      .px-4 { padding-left: 1rem; padding-right: 1rem; }
+      .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+      .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+      .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+      
+      /* Spacing - Margin */
+      .m-0 { margin: 0; }
+      .m-1 { margin: 0.25rem; }
+      .m-2 { margin: 0.5rem; }
+      .m-4 { margin: 1rem; }
+      .mb-1 { margin-bottom: 0.25rem; }
+      .mb-2 { margin-bottom: 0.5rem; }
+      .mb-3 { margin-bottom: 0.75rem; }
+      .mb-4 { margin-bottom: 1rem; }
+      .mb-6 { margin-bottom: 1.5rem; }
+      .mt-1 { margin-top: 0.25rem; }
+      .mt-2 { margin-top: 0.5rem; }
+      .mt-3 { margin-top: 0.75rem; }
+      
+      /* Typography */
+      .text-xs { font-size: 0.75rem; line-height: 1rem; }
+      .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+      .text-base { font-size: 1rem; line-height: 1.5rem; }
+      .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+      .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+      .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+      .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+      
+      .font-normal { font-weight: 400; }
+      .font-medium { font-weight: 500; }
+      .font-semibold { font-weight: 600; }
+      .font-bold { font-weight: 700; }
+      
+      /* Layout */
+      .min-h-screen { min-height: 100vh; }
+      .max-w-full { max-width: 100%; }
+      .w-full { width: 100%; }
+      .h-full { height: 100%; }
+      
+      /* Flexbox */
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .flex-row { flex-direction: row; }
+      .justify-start { justify-content: flex-start; }
+      .justify-center { justify-content: center; }
+      .justify-between { justify-content: space-between; }
+      .justify-end { justify-content: flex-end; }
+      .items-start { align-items: flex-start; }
+      .items-center { align-items: center; }
+      .items-end { align-items: flex-end; }
+      
+      /* Grid */
+      .grid { display: grid; }
+      .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+      .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .gap-2 { gap: 0.5rem; }
+      .gap-3 { gap: 0.75rem; }
+      .gap-4 { gap: 1rem; }
+      .gap-6 { gap: 1.5rem; }
+      
+      /* Spacing utilities */
+      .space-y-1 > * + * { margin-top: 0.25rem; }
+      .space-y-2 > * + * { margin-top: 0.5rem; }
+      .space-y-3 > * + * { margin-top: 0.75rem; }
+      
+      /* Borders */
+      .border { border-width: 1px; }
+      .border-0 { border-width: 0; }
+      .border-t { border-top-width: 1px; }
+      .border-r { border-right-width: 1px; }
+      .border-b { border-bottom-width: 1px; }
+      .border-l { border-left-width: 1px; }
+      .border-l-4 { border-left-width: 4px; }
+      .border-gray-200 { border-color: #e5e7eb; }
+      .border-gray-300 { border-color: #d1d5db; }
+      .border-blue-200 { border-color: #bfdbfe; }
+      .border-blue-600 { border-left-color: #2563eb; }
+      .border-l-blue-600 { border-left-color: #2563eb; }
+      
+      /* Border Radius */
+      .rounded { border-radius: 0.25rem; }
+      .rounded-sm { border-radius: 0.125rem; }
+      .rounded-md { border-radius: 0.375rem; }
+      .rounded-lg { border-radius: 0.5rem; }
+      .rounded-xl { border-radius: 0.75rem; }
+      
+      /* Display */
+      .block { display: block; }
+      .inline { display: inline; }
+      .inline-block { display: inline-block; }
+      .hidden { display: none; }
+      
+      /* Position */
+      .relative { position: relative; }
+      .absolute { position: absolute; }
+      .fixed { position: fixed; }
+      .static { position: static; }
+      
+      /* Responsive Grid - Mobile First */
+      @media (min-width: 640px) {
+        .sm\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      
+      @media (min-width: 768px) {
+        .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .md\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+      
+      @media (min-width: 1024px) {
+        .lg\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .lg\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .lg\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      }
+      
+      @media (min-width: 1280px) {
+        .xl\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .xl\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .xl\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      }
+      
+      /* Additional utilities for complex layouts */
+      .overflow-hidden { overflow: hidden; }
+      .overflow-auto { overflow: auto; }
+      .text-left { text-align: left; }
+      .text-center { text-align: center; }
+      .text-right { text-align: right; }
+      .uppercase { text-transform: uppercase; }
+      .lowercase { text-transform: lowercase; }
+      .capitalize { text-transform: capitalize; }
+      .leading-none { line-height: 1; }
+      .leading-tight { line-height: 1.25; }
+      .leading-normal { line-height: 1.5; }
+      .leading-relaxed { line-height: 1.625; }
+      .tracking-tight { letter-spacing: -0.025em; }
+      .tracking-normal { letter-spacing: 0; }
+      .tracking-wide { letter-spacing: 0.025em; }
+    </style>
+  </head><body>
+    <div id="root"></div>
+  </body></html>`;
 };
 
-const DropdownMenuModule = {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-};
+type RenderStatus = "idle" | "rendering" | "ready" | "error";
 
-const TabsModule = {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-};
+const SAMPLE_FILES = [
+  { label: "QR Codes", path: "/sample2.txt", icon: "QrCode" },
+  { label: "Analytics dashboard", path: "/sample1.txt", icon: "BarChart3" },
+  { label: "Pendulum", path: "/sample3.txt", icon: "Waves" },
+];
 
-const SelectModule = {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue
-};
-
-const InputModule = {
-  Input
-};
-
-const TableModule = {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-};
-
-const AlertModule = {
-  Alert,
-  AlertDescription,
-  AlertTitle
-};
-
-const LabelModule = {
-  Label
-};
-
-const SwitchModule = {
-  Switch
-};
-
-const CheckboxModule = {
-  Checkbox
-};
-
-const AvatarModule = {
-  Avatar,
-  AvatarFallback,
-  AvatarImage
-};
-
-const SliderModule = {
-  Slider
-};
-
-const SeparatorModule = {
-  Separator
-};
-
-const PopoverModule = {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-};
-
-const ProgressModule = {
-  Progress
-};
-
-// Our available modules
-const availableModules = {
-  'react': React,
-  '@mui/material': {
-    Button: MuiButton, 
-    Container, 
-    Card: MuiCard, 
-    Grid, 
-    Box, 
-    Typography, 
-    TextField, 
-    Paper, 
-    List, 
-    ListItem, 
-    Divider
+class PreviewErrorBoundary extends React.Component<
+  {
+    onError: (error: Error, errorInfo: ErrorInfo) => void;
+    children: React.ReactNode;
   },
-  'react-dom': ReactDOM,
-  'lucide-react': LucideIcons,
-  'recharts': Recharts,
-  'lodash': _,
-  'd3': d3,
-  'three': THREE,
-  'tone': Tone,
-  'mathjs': math,
-  // ShadCN/UI components with our actual implementations
-  '@/components/ui/card': CardModule,
-  '@/components/ui/button': ButtonModule,
-  '@/components/ui/badge': BadgeModule,
-  // Additional ShadCN components
-  '@/components/ui/dialog': DialogModule,
-  '@/components/ui/dropdown-menu': DropdownMenuModule,
-  '@/components/ui/tabs': TabsModule,
-  '@/components/ui/select': SelectModule,
-  '@/components/ui/input': InputModule,
-  '@/components/ui/table': TableModule,
-  '@/components/ui/alert': AlertModule,
-  '@/components/ui/label': LabelModule,
-  '@/components/ui/switch': SwitchModule,
-  '@/components/ui/checkbox': CheckboxModule,
-  '@/components/ui/avatar': AvatarModule,
-  '@/components/ui/slider': SliderModule,
-  '@/components/ui/separator': SeparatorModule,
-  '@/components/ui/popover': PopoverModule,
-  '@/components/ui/progress': ProgressModule
-};
+  { error: Error | null }
+> {
+  constructor(props: {
+    onError: (error: Error, errorInfo: ErrorInfo) => void;
+    children: React.ReactNode;
+  }) {
+    super(props);
+    this.state = { error: null };
+  }
 
-function App() {
-  const [code, setCode] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  const [currentComponent, setCurrentComponent] = useState<React.ComponentType | null>(null);
-  // We'll store a warning message if the user code references "@/components/ui/card"
-  const [placeholderWarning, setPlaceholderWarning] = useState<string | null>(null);
-  // States to show "copied!" confirmation
-  const [hintCopied, setHintCopied] = useState(false);
-  const [pdfTipCopied, setPdfTipCopied] = useState(false);
-  const codePreviewRef = useRef<HTMLDivElement>(null);
-  const componentRef = useRef<HTMLDivElement>(null);
-  const rootRef = useRef<ReactDOM.Root | null>(null);
-  const printRootRef = useRef<ReactDOM.Root | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // The text we want the user to copy for removing @/components/ui/card
-  const removalHintText = `Please create the artifact as is, but without @/components/ui/card`;
-  // The text we want the user to copy for PDF print tip
-  const pdfBreakTipText = `Can you also make it so that when printed each individual component does not break on the printed pages?`;
-  // Function to copy the removal hint text
-  const handleCopyHint = () => {
-    navigator.clipboard.writeText(removalHintText).then(() => {
-      setHintCopied(true);
-      setTimeout(() => setHintCopied(false), 2000); // Hide after 2s
-    }).catch(err => {
-      console.error('Failed to copy text:', err);
-    });
-  };
-  // Function to copy the PDF tip text
-  const handleCopyPdfTip = () => {
-    navigator.clipboard.writeText(pdfBreakTipText).then(() => {
-      setPdfTipCopied(true);
-      setTimeout(() => setPdfTipCopied(false), 2000); // Hide after 2s
-    }).catch(err => {
-      console.error('Failed to copy text:', err);
-    });
-  };
-  // Create React roots once on mount
-  useEffect(() => {
-    let previewRoot: ReactDOM.Root | null = null;
-    let printRoot: ReactDOM.Root | null = null;
-    if (codePreviewRef.current && !rootRef.current) {
-      previewRoot = ReactDOM.createRoot(codePreviewRef.current);
-      rootRef.current = previewRoot;
-    }
-    if (componentRef.current && !printRootRef.current) {
-      printRoot = ReactDOM.createRoot(componentRef.current);
-      printRootRef.current = printRoot;
-    }
-    return () => {
-      if (previewRoot) {
-        try {
-          previewRoot.unmount();
-        } catch (error) {
-          console.error("Error unmounting preview root:", error);
-        }
-      }
-      if (printRoot) {
-        try {
-          printRoot.unmount();
-        } catch (error) {
-          console.error("Error unmounting print root:", error);
-        }
-      }
-      rootRef.current = null;
-      printRootRef.current = null;
-    };
-  }, []);
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
 
-  // Inject a little print CSS
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.type = 'text/css';
-    style.media = 'print';
-    style.innerHTML = `
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        #print-container {
-          visibility: visible !important;
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 100% !important;
-          height: auto !important;
-          overflow: visible !important;
-        }
-        #print-container * {
-          visibility: visible !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.props.onError(error, errorInfo);
+  }
 
-  // Wrap preprocessUserCode in useCallback - moved BEFORE renderComponent
-  const preprocessUserCode = React.useCallback((sourceCode: string): string => {
-    setPlaceholderWarning(null);
-    const userImports = new Set<string>();
-    const importRegex = /import\s+(?:{[^}]*}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
-    let match;
-    while ((match = importRegex.exec(sourceCode)) !== null) {
-      const importPath = match[1];
-      userImports.add(importPath);
-    }
-    let transformedCode = sourceCode;
-    if (userImports.has('recharts')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]recharts['"];?/g,
-        'const { $1 } = recharts;'
-      );
-    }
-    if (userImports.has('lodash')) {
-      transformedCode = transformedCode.replace(
-        /import\s+\*\s+as\s+_\s+from\s+['"]lodash['"];?/g,
-        '// lodash is available as _'
-      );
-      transformedCode = transformedCode.replace(
-        /import\s+_\s+from\s+['"]lodash['"];?/g,
-        '// lodash is available as _'
-      );
-    }
-    if (userImports.has('lucide-react')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]lucide-react['"];?/g,
-        'const { $1 } = lucideReact;'
-      );
-    }
-    if (userImports.has('@mui/material')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@mui\/material['"];?/g,
-        'const { $1 } = mui;'
-      );
-    }
-    if (userImports.has('d3')) {
-      transformedCode = transformedCode.replace(
-        /import\s+\*\s+as\s+d3\s+from\s+['"]d3['"];?/g,
-        '// d3 is available as d3'
-      );
-    }
-    if (userImports.has('three')) {
-      transformedCode = transformedCode.replace(
-        /import\s+\*\s+as\s+THREE\s+from\s+['"]three['"];?/g,
-        '// THREE is available as THREE'
-      );
-    }
-    if (userImports.has('tone')) {
-      transformedCode = transformedCode.replace(
-        /import\s+\*\s+as\s+Tone\s+from\s+['"]tone['"];?/g,
-        '// Tone is available as Tone'
-      );
-    }
-    if (userImports.has('mathjs')) {
-      transformedCode = transformedCode.replace(
-        /import\s+\*\s+as\s+math\s+from\s+['"]mathjs['"];?/g,
-        '// math is available as math'
-      );
-    }
-    // If the user tries to import from "@/components/ui/card"
-    if (userImports.has('@/components/ui/card')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/card['"];?/g,
-        'const { $1 } = shadcnCard;'
-      );
-    }
-    
-    // ShadCN/UI imports handling
-    if (userImports.has('@/components/ui/button')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/button['"];?/g,
-        'const { $1 } = shadcnButton;'
-      );
-    }
-    if (userImports.has('@/components/ui/badge')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/badge['"];?/g,
-        'const { $1 } = shadcnBadge;'
-      );
-    }
-    if (userImports.has('@/components/ui/card')) {
-      setPlaceholderWarning(null); // Don't show warning for our supported components
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/card['"];?/g,
-        'const { $1 } = shadcnCard;'
-      );
-    }
-    
-    // Additional ShadCN components
-    if (userImports.has('@/components/ui/dialog')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/dialog['"];?/g,
-        'const { $1 } = shadcnDialog;'
-      );
-    }
-    if (userImports.has('@/components/ui/dropdown-menu')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/dropdown-menu['"];?/g,
-        'const { $1 } = shadcnDropdownMenu;'
-      );
-    }
-    if (userImports.has('@/components/ui/tabs')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/tabs['"];?/g,
-        'const { $1 } = shadcnTabs;'
-      );
-    }
-    if (userImports.has('@/components/ui/select')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/select['"];?/g,
-        'const { $1 } = shadcnSelect;'
-      );
-    }
-    if (userImports.has('@/components/ui/input')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/input['"];?/g,
-        'const { $1 } = shadcnInput;'
-      );
-    }
-    if (userImports.has('@/components/ui/table')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/table['"];?/g,
-        'const { $1 } = shadcnTable;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/alert')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/alert['"];?/g,
-        'const { $1 } = shadcnAlert;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/label')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/label['"];?/g,
-        'const { $1 } = shadcnLabel;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/switch')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/switch['"];?/g,
-        'const { $1 } = shadcnSwitch;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/checkbox')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/checkbox['"];?/g,
-        'const { $1 } = shadcnCheckbox;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/avatar')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/avatar['"];?/g,
-        'const { $1 } = shadcnAvatar;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/slider')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/slider['"];?/g,
-        'const { $1 } = shadcnSlider;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/separator')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/separator['"];?/g,
-        'const { $1 } = shadcnSeparator;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/popover')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/popover['"];?/g,
-        'const { $1 } = shadcnPopover;'
-      );
-    }
-    
-    if (userImports.has('@/components/ui/progress')) {
-      transformedCode = transformedCode.replace(
-        /import\s+{([^}]*)}\s+from\s+['"]@\/components\/ui\/progress['"];?/g,
-        'const { $1 } = shadcnProgress;'
-      );
-    }
-    
-    // Remove any leftover import lines
-    transformedCode = transformedCode.replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '');
-    
-    // Remove export default lines - handle both "export default function ComponentName" and "export default ComponentName"
-    transformedCode = transformedCode.replace(
-      /export\s+default\s+function\s+([A-Za-z0-9_]+)/g,
-      'function $1'
-    );
-    transformedCode = transformedCode.replace(
-      /export\s+default\s+([A-Za-z0-9_]+);?/g,
-      '// exporting $1'
-    );
-    
-    return transformedCode;
-  }, [setPlaceholderWarning]);
-
-  // Wrap renderComponent in useCallback - moved BEFORE the useEffect that uses it
-  const renderComponent = React.useCallback((root: ReactDOM.Root) => {
-    try {
-      setError(null);
-      const processedCode = preprocessUserCode(code);
-      
-      // ADD THIS DEBUGGING CODE:
-      console.log("=== DEBUGGING ===");
-      console.log("Original code (first 200 chars):", code.substring(0, 200));
-      console.log("Processed code (first 500 chars):", processedCode.substring(0, 500));
-      
-      let componentName: string | null = null;
-      
-      // Try multiple patterns for function detection
-      const functionPattern1 = /function\s+([A-Z][A-Za-z0-9_]*)\s*\(/;
-      const functionPattern2 = /const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:\(\s*\)|\(\s*props\s*\)|\(\s*{\s*[^}]*}\s*\))\s*=>/;
-      const exportPattern = /\/\/\s*exporting\s+([A-Z][A-Za-z0-9_]*)/;
-      
-      const functionMatch1 = processedCode.match(functionPattern1);
-      const functionMatch2 = processedCode.match(functionPattern2);
-      const exportMatch = processedCode.match(exportPattern);
-      
-      console.log("Function pattern 1 match:", functionMatch1);
-      console.log("Function pattern 2 match:", functionMatch2);
-      console.log("Export pattern match:", exportMatch);
-      
-      if (functionMatch1 && functionMatch1[1]) {
-        componentName = functionMatch1[1];
-        console.log("Found component via function pattern 1:", componentName);
-      } else if (functionMatch2 && functionMatch2[1]) {
-        componentName = functionMatch2[1];
-        console.log("Found component via function pattern 2:", componentName);
-      } else if (exportMatch && exportMatch[1]) {
-        componentName = exportMatch[1];
-        console.log("Found component via export pattern:", componentName);
-      }
-      
-      console.log("Final component name:", componentName);
-      console.log("=== END DEBUGGING ===");
-      
-      const transformedCode = Babel.transform(processedCode, {
-        presets: ['react'],
-        plugins: [
-          function() {
-            return {
-              visitor: {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                Identifier(path: any) {
-                  if (path.node.name === 'development') {
-                    path.replaceWith({ type: 'BooleanLiteral', value: true });
-                  }
-                  if (path.node.name === 'production') {
-                    path.replaceWith({ type: 'BooleanLiteral', value: false });
-                  }
-                }
-              }
-            };
-          }
-        ],
-        filename: 'usercode.jsx'
-      }).code || '';
-      let componentExtractionCode: string;
-      if (componentName) {
-        componentExtractionCode = `
-          try {
-            if (typeof ${componentName} === 'function') {
-              return ${componentName};
-            } else {
-              throw new Error('${componentName} is not a valid React component function');
-            }
-          } catch (err) {
-            throw err;
-          }
-        `;
-      } else {
-        componentExtractionCode = `
-          const potentialComponents = [];
-          Object.keys(this).forEach(key => {
-            if (typeof this[key] === 'function' && /^[A-Z]/.test(key)) {
-              potentialComponents.push({ name: key, component: this[key] });
-            }
-          });
-          if (potentialComponents.length > 0) {
-            return potentialComponents[0].component;
-          }
-          throw new Error('No React component found in code');
-        `;
-      }
-      
-      // THIS IS THE FIX: Make shadcn components available before MUI components
-      // to avoid naming conflicts
-      const wrappedCode = `
-        const React = reactLib;
-        const {
-          useState, useEffect, useRef, useMemo,
-          useCallback, useContext, useReducer
-        } = reactLib;
-        const reactDOM = reactDOMLib;
-        const mui = muiLib;
-        const recharts = rechartsLib;
-        const lucideReact = lucideLib;
-        const _ = lodashLib;
-        const d3 = d3Lib;
-        const THREE = threeLib;
-        const Tone = toneLib;
-        const math = mathLib;
-        
-        // For ShadCN/UI imports - MAKE THESE AVAILABLE FIRST with their proper structure
-        // Shadcn components are exported as named exports
-        const shadcnButton = shadcnButtonLib;
-        const shadcnBadge = shadcnBadgeLib;
-        const shadcnCard = shadcnCardLib;
-        const shadcnDialog = shadcnDialogLib;
-        const shadcnDropdownMenu = shadcnDropdownMenuLib;
-        const shadcnTabs = shadcnTabsLib;
-        const shadcnSelect = shadcnSelectLib;
-        const shadcnInput = shadcnInputLib;
-        const shadcnTable = shadcnTableLib;
-        const shadcnAlert = shadcnAlertLib;
-        const shadcnLabel = shadcnLabelLib;
-        const shadcnSwitch = shadcnSwitchLib;
-        const shadcnCheckbox = shadcnCheckboxLib;
-        const shadcnAvatar = shadcnAvatarLib;
-        const shadcnSlider = shadcnSliderLib;
-        const shadcnSeparator = shadcnSeparatorLib;
-        const shadcnPopover = shadcnPopoverLib;
-        const shadcnProgress = shadcnProgressLib;
-        
-        // NEW: Use renamed MUI components to avoid conflicts with shadcn
-        const {
-          Button: MuiButton, Container, Card: MuiCard, Grid, Box,
-          Typography, TextField, Paper, List, ListItem, Divider
-        } = mui;
-        
-        try {
-          ${transformedCode}
-          ${componentExtractionCode}
-        } catch (err) {
-          throw err;
-        }
-      `;
-      
-      const execFunc = new Function(
-        'reactLib',
-        'reactDOMLib',
-        'muiLib',
-        'rechartsLib',
-        'lucideLib',
-        'lodashLib',
-        'd3Lib',
-        'threeLib',
-        'toneLib',
-        'mathLib',
-        'shadcnCardLib',
-        'shadcnButtonLib',
-        'shadcnBadgeLib',
-        'shadcnDialogLib',
-        'shadcnDropdownMenuLib',
-        'shadcnTabsLib',
-        'shadcnSelectLib',
-        'shadcnInputLib',
-        'shadcnTableLib',
-        'shadcnAlertLib',
-        'shadcnLabelLib',
-        'shadcnSwitchLib',
-        'shadcnCheckboxLib',
-        'shadcnAvatarLib',
-        'shadcnSliderLib',
-        'shadcnSeparatorLib',
-        'shadcnPopoverLib',
-        'shadcnProgressLib',
-        wrappedCode
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const execContext: Record<string, any> = {
-        console: console,
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-        setInterval: setInterval,
-        clearInterval: clearInterval
-      };
-      const UserComponent = execFunc.call(
-        execContext,
-        availableModules['react'],
-        availableModules['react-dom'],
-        availableModules['@mui/material'],
-        availableModules['recharts'],
-        availableModules['lucide-react'],
-        availableModules['lodash'],
-        availableModules['d3'],
-        availableModules['three'],
-        availableModules['tone'],
-        availableModules['mathjs'],
-        availableModules['@/components/ui/card'],
-        availableModules['@/components/ui/button'],
-        availableModules['@/components/ui/badge'],
-        availableModules['@/components/ui/dialog'],
-        availableModules['@/components/ui/dropdown-menu'],
-        availableModules['@/components/ui/tabs'],
-        availableModules['@/components/ui/select'],
-        availableModules['@/components/ui/input'],
-        availableModules['@/components/ui/table'],
-        availableModules['@/components/ui/alert'],
-        availableModules['@/components/ui/label'],
-        availableModules['@/components/ui/switch'],
-        availableModules['@/components/ui/checkbox'],
-        availableModules['@/components/ui/avatar'],
-        availableModules['@/components/ui/slider'],
-        availableModules['@/components/ui/separator'],
-        availableModules['@/components/ui/popover'],
-        availableModules['@/components/ui/progress']
-      );
-      if (!UserComponent || typeof UserComponent !== 'function') {
-        throw new Error('Component not found or not a valid function');
-      }
-      setCurrentComponent(() => UserComponent);
-      const generateDemoData = (count = 7) => {
-        return Array.from({ length: count }, (_, i) => ({
-          name: `Category ${i + 1}`,
-          value: Math.floor(Math.random() * 1200) + 800,
-          count: Math.floor(Math.random() * 150) + 50,
-          ratio: Math.random(),
-          trend: Math.sin(i / 2) * 100 + 500
-        }));
-      };
-      const WrapperComponent = () => {
-        const [activeTab, setActiveTab] = React.useState('dashboard');
-        const [demoData, setDemoData] = React.useState(generateDemoData(7));
-        const icons = {
-          LayoutDashboard: availableModules['lucide-react'].LayoutDashboard,
-          BarChart3: availableModules['lucide-react'].BarChart3,
-          FileSpreadsheet: availableModules['lucide-react'].FileSpreadsheet,
-          Music: availableModules['lucide-react'].Music,
-          Hexagon: availableModules['lucide-react'].Hexagon,
-          BrainCircuit: availableModules['lucide-react'].BrainCircuit,
-          Settings: availableModules['lucide-react'].Settings,
-          RotateCcw: availableModules['lucide-react'].RotateCcw,
-          PlayCircle: availableModules['lucide-react'].PlayCircle,
-          PauseCircle: availableModules['lucide-react'].PauseCircle,
-          Wand2: availableModules['lucide-react'].Wand2
-        };
-        try {
-          const props = {
-            activeTab,
-            setActiveTab,
-            demoData,
-            setDemoData,
-            regenerateData: () => setDemoData(generateDemoData(7)),
-            icons,
-            LayoutDashboard: icons.LayoutDashboard,
-            BarChart3: icons.BarChart3,
-            FileSpreadsheet: icons.FileSpreadsheet,
-            Music: icons.Music,
-            Hexagon: icons.Hexagon,
-            BrainCircuit: icons.BrainCircuit,
-            Settings: icons.Settings,
-            RotateCcw: icons.RotateCcw,
-            PlayCircle: icons.PlayCircle,
-            PauseCircle: icons.PauseCircle,
-            Wand2: icons.Wand2
-          };
-          return React.createElement(UserComponent, props);
-        } catch (err) {
-          return (
-            <div style={{ padding: '20px', color: 'red' }}>
-              <h3>Component Error</h3>
-              <p>{err instanceof Error ? err.message : String(err)}</p>
-            </div>
-          );
-        }
-      };
-      const element = React.createElement(
-        // Use 'object' for props type as suggested by ESLint instead of {}
-        class ErrorBoundary extends React.Component<object, { hasError: boolean; error: Error | null }> {
-          constructor(props: object) {
-            super(props);
-            this.state = { hasError: false, error: null };
-          }
-          static getDerivedStateFromError(error: Error) {
-            return { hasError: true, error };
-          }
-          componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-            console.error("Rendering error caught by boundary:", error, errorInfo);
-          }
-          render() {
-            if (this.state.hasError) {
-              return (
-                <div style={{ padding: '20px', color: 'red' }}>
-                  <h3>Rendering Error</h3>
-                  <p>{this.state.error ? this.state.error.message : 'Unknown error'}</p>
-                </div>
-              );
-            }
-            return <WrapperComponent />;
-          }
-        }
-      );
-      root.render(element);
-    } catch (err) {
-      console.error(err);
-      setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
-      root.render(
-        <div style={{ padding: '20px', color: 'red' }}>
-          <h3>Rendering Error</h3>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>
-            {err instanceof Error ? err.message : String(err)}
-          </pre>
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="preview-error" role="alert">
+          <AlertCircle size={20} aria-hidden="true" />
+          <div>
+            <p className="preview-error__title">Component crashed while rendering</p>
+            <p className="preview-error__details">{this.state.error.message}</p>
+          </div>
         </div>
       );
     }
-  }, [code, setError, setCurrentComponent, preprocessUserCode]);
 
-  // Re-render on code changes - Now uses the correctly defined renderComponent
-  useEffect(() => {
-    if (rootRef.current) {
-      try {
-        renderComponent(rootRef.current);
-      } catch (error) {
-        console.error("Error rendering component on code change:", error);
-        setError(`Rendering error: ${error instanceof Error ? error.message : String(error)}`);
-      }
+    return this.props.children;
+  }
+}
+
+const PreviewPlaceholder = () => (
+  <div className="preview-placeholder">
+    <div className="preview-placeholder__icon" aria-hidden="true">
+      <Sparkles size={32} />
+    </div>
+    <h3>Ready when you are</h3>
+    <p>Paste a React component or HTML code to see a live preview instantly.</p>
+  </div>
+);
+
+const PreviewErrorPane = ({
+  message,
+  details,
+}: {
+  message: string;
+  details?: string;
+}) => (
+  <div className="preview-error" role="alert">
+    <AlertCircle size={20} aria-hidden="true" />
+    <div>
+      <p className="preview-error__title">{message}</p>
+      {details ? <p className="preview-error__details">{details}</p> : null}
+    </div>
+  </div>
+);
+
+function App() {
+  const modules = useMemo(() => createModuleRegistry(), []);
+  const [code, setCode] = useState("");
+  const [autoRender] = useState(true);
+  const [status, setStatus] = useState<RenderStatus>("idle");
+  const [error, setError] = useState<UserCodeError | null>(null);
+  const [component, setComponent] = useState<RenderableComponent | null>(null);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [loadingSamplePath, setLoadingSamplePath] = useState<string | null>(null);
+  const [activeSample, setActiveSample] = useState<string | null>(SAMPLE_FILES[0]?.path ?? null);
+  const previewFrameRef = useRef<HTMLIFrameElement>(null);
+  const previewRootRef = useRef<Root | null>(null);
+  const previewPendingNodeRef = useRef<React.ReactNode | null>(null);
+  const previewPendingSourceRef = useRef<string | null>(null);
+  const printFrameRef = useRef<HTMLIFrameElement>(null);
+  const printRootRef = useRef<Root | null>(null);
+  const debouncedCode = useDebouncedValue(code, 450);
+
+  const previewDocumentMarkup = useMemo(() => buildFrameDocument({ padded: true }), []);
+  const printDocumentMarkup = useMemo(() => buildFrameDocument({ padded: false }), []);
+
+  const syncFrameStyles = useCallback((frame: HTMLIFrameElement | null) => {
+    if (!frame) {
+      return;
     }
-  }, [code, renderComponent]);
-
-  // Add a new useEffect to load the tutorial on component mount
-  useEffect(() => {
-    const loadTutorial = async () => {
-      try {
-        const response = await fetch('/tutorial.txt');
-        if (!response.ok) {
-          throw new Error(`Failed to load tutorial: ${response.statusText}`);
-        }
-        const tutorialCode = await response.text();
-        setCode(tutorialCode);
-        setError(null);
-        setPlaceholderWarning(null);
-      } catch (err) {
-        setError(String(err));
-      }
-    };
-    
-    loadTutorial();
+    const doc = frame.contentDocument;
+    if (!doc || !doc.head) {
+      return;
+    }
+    if (typeof document === "undefined") {
+      return;
+    }
+    syncDocumentStyles();
   }, []);
 
-  // Load sample code from e.g. public/sample1.txt, public/sample2.txt, ...
-  const loadSampleCode = async (sampleNumber: number) => {
-    try {
-      const response = await fetch(`/sample${sampleNumber}.txt`);
-      if (!response.ok) {
-        throw new Error(`Failed to load sample ${sampleNumber}: ${response.statusText}`);
+  const syncPreviewFrameStyles = useCallback(() => {
+    syncFrameStyles(previewFrameRef.current);
+  }, [syncFrameStyles]);
+
+  const syncPrintFrameStyles = useCallback(() => {
+    syncFrameStyles(printFrameRef.current);
+  }, [syncFrameStyles]);
+
+  const adjustIframeHeight = useCallback((frame: HTMLIFrameElement | null) => {
+    if (!frame) {
+      return;
+    }
+    const doc = frame.contentDocument;
+    if (!doc) {
+      return;
+    }
+    const body = doc.body;
+    const html = doc.documentElement;
+    const height = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    );
+    frame.style.height = `${Math.min(Math.max(height, 520), 2400)}px`;
+  }, []);
+
+  const ensurePreviewRoot = useCallback(() => {
+    const frame = previewFrameRef.current;
+    if (!frame) {
+      return null;
+    }
+    const doc = frame.contentDocument;
+    if (!doc) {
+      return null;
+    }
+    // Initialize Twind (Tailwind runtime) once per iframe document
+    ensureTwind(doc);
+    const mount = doc.getElementById("root");
+    if (!mount) {
+      return null;
+    }
+    if (!previewRootRef.current) {
+      previewRootRef.current = createRoot(mount);
+    }
+    adjustIframeHeight(frame);
+    return previewRootRef.current;
+  }, [adjustIframeHeight]);
+
+  const ensurePrintRoot = useCallback(() => {
+    const frame = printFrameRef.current;
+    if (!frame) {
+      return null;
+    }
+    const doc = frame.contentDocument;
+    if (!doc) {
+      return null;
+    }
+    ensureTwind(doc);
+    const mount = doc.getElementById("root");
+    if (!mount) {
+      return null;
+    }
+    if (!printRootRef.current) {
+      printRootRef.current = createRoot(mount);
+    }
+    adjustIframeHeight(frame);
+    return printRootRef.current;
+  }, [adjustIframeHeight]);
+
+  const renderPreviewContent = useCallback(
+    (node: React.ReactNode) => {
+      const root = ensurePreviewRoot();
+      if (!root) {
+        previewPendingNodeRef.current = node;
+        return;
       }
-      const sampleCode = await response.text();
-      setCode(sampleCode);
+
+      const postRender = () => {
+        requestAnimationFrame(() => {
+          adjustIframeHeight(previewFrameRef.current);
+          syncPreviewFrameStyles();
+          seedTwindStyles(previewFrameRef.current?.contentDocument ?? null);
+        });
+      };
+
+      try {
+        root.render(node);
+        postRender();
+      } catch (renderError) {
+        console.warn("Preview root render failed, recreating", renderError);
+        root.unmount();
+        previewRootRef.current = null;
+        const newRoot = ensurePreviewRoot();
+        if (newRoot) {
+          newRoot.render(node);
+          postRender();
+        } else {
+          previewPendingNodeRef.current = node;
+        }
+      }
+    },
+    [adjustIframeHeight, ensurePreviewRoot, syncPreviewFrameStyles]
+  );
+
+  const handlePreviewRuntimeError = useCallback(
+    (previewError: Error) => {
+      console.error("Preview runtime error", previewError);
+      setError(
+        new UserCodeError(
+          "Component crashed while rendering",
+          previewError.message
+        )
+      );
+      setStatus("error");
+    },
+    []
+  );
+
+  const runRender = useCallback(
+    (source: string) => {
+      const trimmed = source.trim();
+
+      if (!trimmed) {
+        setComponent(null);
+        setExecutionResult(null);
+        setStatus("idle");
+        setError(null);
+        renderPreviewContent(<PreviewPlaceholder />);
+        previewPendingSourceRef.current = null;
+        return;
+      }
+
+      const frame = previewFrameRef.current;
+      const frameWindow = frame?.contentWindow ?? null;
+      const readyState = frame?.contentDocument?.readyState;
+
+      setStatus("rendering");
       setError(null);
-      setPlaceholderWarning(null);
-    } catch (err) {
-      setError(String(err));
-    }
-  };
 
-  // Print logic
-  const handlePrint = async () => {
-    if (!currentComponent || !printRootRef.current) return;
+      if (!frame || !frameWindow || readyState !== "complete") {
+        previewPendingSourceRef.current = source;
+        renderPreviewContent(<PreviewPlaceholder />);
+        return;
+      }
+
+      try {
+        const result = executeUserCode(source, modules, {
+          runtimeWindow: frameWindow,
+        });
+        const Component = result.component;
+
+        previewPendingSourceRef.current = null;
+        setComponent(() => Component);
+        setExecutionResult(result);
+        setStatus("ready");
+        const frameDocument = frame.contentDocument ?? null;
+        renderPreviewContent(
+          <FrameStyleProviders targetDocument={frameDocument} cacheKey="preview">
+            <RuntimeProviders>
+              <PreviewErrorBoundary
+                key={`${Date.now()}`}
+                onError={handlePreviewRuntimeError}
+              >
+                <Component />
+              </PreviewErrorBoundary>
+            </RuntimeProviders>
+          </FrameStyleProviders>
+        );
+      } catch (err) {
+        previewPendingSourceRef.current = null;
+        const userError =
+          err instanceof UserCodeError
+            ? err
+            : new UserCodeError(
+                "Unexpected error while rendering",
+                err instanceof Error ? err.message : undefined
+              );
+        setComponent(null);
+        setExecutionResult(null);
+        setStatus("error");
+        setError(userError);
+        renderPreviewContent(
+          <PreviewErrorPane
+            message={userError.message}
+            details={userError.context}
+          />
+        );
+      }
+    },
+    [modules, renderPreviewContent, handlePreviewRuntimeError]
+  );
+
+  const loadSample = useCallback(
+    async (path: string, options?: { silent?: boolean }) => {
+      const silent = Boolean(options?.silent);
+      if (!silent) {
+        setLoadingSamplePath(path);
+      }
+
+      try {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`Unable to load sample (${response.status})`);
+        }
+        const sampleCode = await response.text();
+        setCode(sampleCode);
+        setActiveSample(path);
+        if (!autoRender) {
+          runRender(sampleCode);
+        }
+        setError(null);
+      } catch (sampleError) {
+        const message =
+          sampleError instanceof Error
+            ? sampleError.message
+            : "Unknown error loading sample";
+        const userError = new UserCodeError("Could not load sample", message);
+        setError(userError);
+        setStatus("error");
+        renderPreviewContent(
+          <PreviewErrorPane message={userError.message} details={message} />
+        );
+        if (silent) {
+          throw sampleError;
+        }
+      } finally {
+        if (!silent) {
+          setLoadingSamplePath(null);
+        }
+      }
+    },
+    [autoRender, renderPreviewContent, runRender]
+  );
+
+  const handlePrint = useCallback(() => {
+    if (!component || status !== "ready") {
+      return;
+    }
+
+    const root = ensurePrintRoot();
+    const frame = printFrameRef.current;
+    if (!root || !frame) {
+      console.warn("Print frame is not ready yet");
+      return;
+    }
+
+    setIsPrinting(true);
+
+    let Printable: RenderableComponent | null = null;
+    const frameWindow = frame.contentWindow ?? null;
+
+    if (!frameWindow) {
+      setIsPrinting(false);
+      console.warn("Print window is not available");
+      return;
+    }
+
     try {
-      const componentToRender = currentComponent;
-      // Render in the hidden print container
-      printRootRef.current.render(React.createElement(componentToRender));
-      // Give it a short delay, then print
-      setTimeout(() => {
-        window.print();
-        setTimeout(() => {
-          console.log("Print operation complete");
-        }, 500);
-      }, 300);
+      const result = executeUserCode(code, modules, {
+        runtimeWindow: frameWindow,
+      });
+      Printable = result.component;
     } catch (err) {
-      console.error('Error preparing for print:', err);
-      setError(`Error preparing for print: ${err instanceof Error ? err.message : String(err)}`);
+      setIsPrinting(false);
+      const userError =
+        err instanceof UserCodeError
+          ? err
+          : new UserCodeError(
+              "Unexpected error while preparing PDF",
+              err instanceof Error ? err.message : undefined
+            );
+      console.error("Failed to render print component", err);
+      setError(userError);
+      return;
     }
-  };
 
-  const showAppUI = true;
-  const [leftPanelWidth, setLeftPanelWidth] = useState(35); // Changed from 40 to 35
-  const [isDragging, setIsDragging] = useState(false);
-  // Update the event handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-  // Add this useEffect to handle the mouse move and up events
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+    const Component = Printable;
+
+    if (!Component) {
+      setIsPrinting(false);
+      console.warn("Printable component could not be created");
+      return;
+    }
+
+    const frameDocument = frame.contentDocument ?? null;
+
+    root.render(
+      <FrameStyleProviders targetDocument={frameDocument} cacheKey="print">
+        <RuntimeProviders>
+          <div className="print-wrapper">
+            <Component />
+          </div>
+        </RuntimeProviders>
+      </FrameStyleProviders>
+    );
+    syncPrintFrameStyles();
+    requestAnimationFrame(() => {
+      adjustIframeHeight(frame);
+      syncPrintFrameStyles();
+    });
+
+    if (!frameWindow) {
+      setIsPrinting(false);
+      return;
+    }
+
+    frameWindow.focus();
+    adjustIframeHeight(frame);
+    
+    // Wait for charts and dynamic content to fully render before printing
+    const waitForChartsAndPrint = () => {
+      let attempts = 0;
+      const maxAttempts = 10;
       
-      const container = document.querySelector('.main-container');
-      if (container) {
-        const containerRect = container.getBoundingClientRect();
-        const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-        setLeftPanelWidth(Math.min(Math.max(newWidth, 20), 80));
+      const checkAndPrint = () => {
+        attempts++;
+        
+        // Check if recharts or other chart libraries have finished rendering
+        const chartElements = frameDocument?.querySelectorAll('svg, canvas, .recharts-wrapper, .recharts-surface');
+        const hasCharts = chartElements && chartElements.length > 0;
+        
+        // Check if SVG elements have actual content (width/height)
+        const svgElements = frameDocument?.querySelectorAll('svg');
+        const hasRenderedSvg = svgElements && Array.from(svgElements).some(svg => {
+          const rect = svg.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        });
+        
+        console.log(`PDF render attempt ${attempts}: Found ${chartElements?.length || 0} chart elements, SVG rendered: ${hasRenderedSvg}`);
+        
+        if ((hasCharts && hasRenderedSvg) || attempts >= maxAttempts) {
+          frameWindow.print();
+          setTimeout(() => {
+            setIsPrinting(false);
+          }, 500);
+        } else {
+          // Wait a bit more and try again
+          setTimeout(checkAndPrint, 200);
+        }
+      };
+      
+      // Start checking after initial delay
+      setTimeout(checkAndPrint, 500);
+    };
+    
+    requestAnimationFrame(waitForChartsAndPrint);
+  }, [
+    adjustIframeHeight,
+    code,
+    component,
+    ensurePrintRoot,
+    modules,
+    status,
+    syncPrintFrameStyles,
+  ]);
+
+  useEffect(() => {
+    renderPreviewContent(<PreviewPlaceholder />);
+  }, [renderPreviewContent]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const runSync = () => {
+      syncPreviewFrameStyles();
+      syncPrintFrameStyles();
+    };
+
+    const headObserver = new MutationObserver(runSync);
+    headObserver.observe(document.head, {
+      childList: true,
+      subtree: true,
+    });
+
+    const attrObserver = new MutationObserver(runSync);
+    attrObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"],
+    });
+
+    if (document.body) {
+      attrObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    }
+
+    runSync();
+
+    return () => {
+      headObserver.disconnect();
+      attrObserver.disconnect();
+    };
+  }, [syncPreviewFrameStyles, syncPrintFrameStyles]);
+
+  useEffect(() => {
+    if (!SAMPLE_FILES.length) {
+      return;
+    }
+    loadSample(SAMPLE_FILES[0].path, { silent: true }).catch((err) => {
+      console.error("Failed to load default sample", err);
+    });
+  }, [loadSample]);
+
+  useEffect(() => {
+    const frame = previewFrameRef.current;
+    if (!frame) {
+      return;
+    }
+
+    const handleLoad = () => {
+      if (previewRootRef.current) {
+        // Avoid unmounting during React render by scheduling it.
+        const root = previewRootRef.current;
+        previewRootRef.current = null;
+        setTimeout(() => root.unmount(), 0);
+      }
+
+      syncPreviewFrameStyles();
+      requestAnimationFrame(() => {
+        adjustIframeHeight(frame);
+        syncPreviewFrameStyles();
+      });
+
+      const pendingSource = previewPendingSourceRef.current;
+      const pendingNode = previewPendingNodeRef.current;
+
+      previewPendingNodeRef.current = null;
+
+      if (pendingSource) {
+        previewPendingSourceRef.current = null;
+        runRender(pendingSource);
+        return;
+      }
+
+      if (pendingNode) {
+        renderPreviewContent(pendingNode);
+      } else {
+        renderPreviewContent(<PreviewPlaceholder />);
       }
     };
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+
+    frame.addEventListener("load", handleLoad);
+
+    if (frame.contentDocument?.readyState === "complete") {
+      handleLoad();
     }
+
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      frame.removeEventListener("load", handleLoad);
     };
-  }, [isDragging]);
+  }, [
+    adjustIframeHeight,
+    renderPreviewContent,
+    runRender,
+    syncPreviewFrameStyles,
+  ]);
+
+  useEffect(() => {
+    const frame = printFrameRef.current;
+    if (!frame) {
+      return;
+    }
+
+    const handleLoad = () => {
+      if (printRootRef.current) {
+        const root = printRootRef.current;
+        printRootRef.current = null;
+        setTimeout(() => root.unmount(), 0);
+      }
+      ensurePrintRoot();
+      syncPrintFrameStyles();
+      requestAnimationFrame(() => {
+        adjustIframeHeight(frame);
+        syncPrintFrameStyles();
+      });
+    };
+
+    frame.addEventListener("load", handleLoad);
+
+    if (frame.contentDocument?.readyState === "complete") {
+      handleLoad();
+    }
+
+    return () => {
+      frame.removeEventListener("load", handleLoad);
+    };
+  }, [adjustIframeHeight, ensurePrintRoot, syncPrintFrameStyles]);
+
+  useEffect(() => {
+    if (!autoRender) {
+      return;
+    }
+
+    if (!debouncedCode.trim()) {
+      setComponent(null);
+      setExecutionResult(null);
+      setStatus("idle");
+      renderPreviewContent(<PreviewPlaceholder />);
+      return;
+    }
+
+    runRender(debouncedCode);
+  }, [autoRender, debouncedCode, renderPreviewContent, runRender]);
+
+  useEffect(() => {
+    return () => {
+      if (previewRootRef.current) {
+        previewRootRef.current.unmount();
+        previewRootRef.current = null;
+      }
+      if (printRootRef.current) {
+        printRootRef.current.unmount();
+        printRootRef.current = null;
+      }
+      previewPendingNodeRef.current = null;
+    };
+  }, []);
+
+  const lineCount = code ? code.split(/\r?\n/).length : 0;
+  const characterCount = code.length;
 
   return (
-    <div
-      className="root-container"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        height: '100vh',
-        overflow: 'hidden'
-      }}
-    >
-      <style>{`
-        @media (max-width: 768px) {
-          .main-container {
-            flex-direction: column !important;
-          }
-          .left-panel, .right-panel {
-            width: 100% !important;
-            min-width: 0 !important;
-          }
-          .root-container {
-            overflow: auto !important;
-            height: auto !important;
-          }
-        }
-        .resize-handle {
-          width: 8px;
-          cursor: col-resize;
-          background: #e2e8f0;
-          margin: 0 -4px;
-          position: relative;
-          z-index: 10;
-          transition: background 0.2s;
-          touch-action: none; /* Prevent touch scrolling while dragging */
-        }
-        .resize-handle:hover {
-          background: #cbd5e1;
-        }
-        .resize-handle.active {
-          background: #94a3b8;
-        }
-        ${isDragging ? `
-          body * {
-            cursor: col-resize !important;
-            user-select: none !important;
-          }
-        ` : ''}
-      `}</style>
-      {showAppUI && (
-        <>
-          <div className="genvise-app-header" style={{ 
-            padding: '0.5rem 1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <div style={{ flexGrow: 1, textAlign: 'center', marginRight: '1rem' }}>
-              <h1 style={{ 
-                margin: '0 0 0.25rem 0',
-                fontSize: '1.5rem'
-              }}>
-                Claude Artifact to PDF Converter
-              </h1>
-              <p style={{ 
-                margin: 0,
-                fontSize: '0.8rem',
-                color: '#fff'
-              }}>
-                Paste your Claude artifact code, see it rendered, and download it as a PDF.
-                Your code and outputs are never stored or processed on our servers and remain solely on your computer.{' '}
-                <Link 
-                  to="/privacy" 
-                  style={{
-                    color: '#fff',
-                    textDecoration: 'underline',
-                    fontWeight: 500
-                  }}
-                >
-                  Privacy Policy
-                </Link>
-              </p>
-            </div>
-            
-            <Link 
-              to="/info" 
-              title="About this tool"
-              style={{
-                color: '#fff',
-                padding: '0.3rem',
-                borderRadius: '50%',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background-color 0.2s',
-                marginLeft: '1rem',
-                flexShrink: 0
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
-              <Info size={20} />
-            </Link>
-          </div>
-          
-          {/* Samples Bar */}
-          <div style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#f8fafc',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              maxWidth: '1600px',
-              width: '100%',
-              justifyContent: 'center'
-            }}>
-              <span style={{
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: '#4a5568'
-              }}>
-                Sample Artifacts:
-              </span>
-              <div style={{
-                display: 'flex',
-                gap: '0.5rem'
-              }}>
-                {[
-                  { id: 1, name: 'Dashboard' },
-                  { id: 2, name: 'Avocado' },
-                  { id: 3, name: 'Pendulum' }
-                ].map((sample) => (
-                  <button
-                    key={sample.id}
-                    onClick={() => loadSampleCode(sample.id)}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      backgroundColor: '#4A5568',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      transition: 'background-color 0.2s ease-in-out',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = '#2D3748';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = '#4A5568';
-                    }}
-                  >
-                    {sample.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="app-header__row">
+          <h1 className="app-header__headline">React & HTML Artifact Studio</h1>
+          <p className="app-header__subtitle">
+          </p>
+        </div>
+      </header>
 
-          <main
-            className="main-container"
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              flex: '1',
-              padding: '1.5rem',
-              gap: '1.5rem',
-              maxWidth: '1600px',
-              margin: '0 auto',
-              width: '100%',
-              boxSizing: 'border-box',
-              minHeight: '0',
-              overflow: 'hidden'
-            }}
-          >
-            <div
-              className="left-panel"
-              style={{
-                width: `${leftPanelWidth}%`,
-                minWidth: '350px',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
-              }}
-            >
-              <h2 className="genvise-section-title" style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
-                Claude Artifact Code
-              </h2>
-              <div
-                style={{
-                  marginBottom: '1rem',
-                  padding: '1rem',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  backgroundColor: '#f8fafc'
-                }}
-              >
-                <p style={{ 
-                  margin: '0 0 0.5rem 0',
-                  fontSize: '0.75rem',
-                  color: '#1a202c',
-                  fontWeight: 600
-                }}>
-                  Tip: For best results when saving as PDF, tell Claude:
-                </p>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <button
-                    onClick={handleCopyPdfTip}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      backgroundColor: pdfTipCopied ? '#48BB78' : '#4A5568',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '0.375rem',
-                      transition: 'background-color 0.2s ease-in-out'
-                    }}
-                  >
-                    Copy
-                  </button>
-                  <span style={{ fontSize: '0.75rem', color: '#4A5568' }}>
-                    {pdfTipCopied ? 'Copied!' : '"Edit the artefact so that components do not overlap over page breaks when printed, but dont put each component on a new page."'}
-                  </span>
+      <main className="app-body">
+        <section className="app-column editor-column">
+          <div className="column-scroll">
+            <Card className="app-card editor-card">
+              <CardHeader>
+                <CardTitle>Source code</CardTitle>
+              </CardHeader>
+              <CardContent className="editor-card__content">
+                <div className="editor-toolbar">
+                  <div className="editor-toolbar__group">
+                    {SAMPLE_FILES.map((sample) => {
+                      const isLoading = loadingSamplePath === sample.path;
+                      const isActive = activeSample === sample.path;
+                      const IconComponent = sample.icon === "BarChart3" ? BarChart3 : sample.icon === "QrCode" ? QrCode : Waves;
+                      return (
+                        <Button
+                          key={sample.path}
+                          size="sm"
+                          variant={isActive ? "default" : "secondary"}
+                          onClick={() => loadSample(sample.path)}
+                          disabled={Boolean(loadingSamplePath)}
+                        >
+                          <IconComponent size={14} aria-hidden="true" />
+                          {isLoading ? "Loading…" : sample.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              {/* If we have a placeholder warning, show it above the code box */}
-              {placeholderWarning && (
-                <div
-                  style={{
-                    marginBottom: '1rem',
-                    padding: '0.75rem',
-                    border: '1px solid #fed7d7',
-                    borderRadius: '0.375rem',
-                    backgroundColor: '#fff5f5',
-                    color: '#c62828',
-                    fontSize: '0.875rem',
-                    whiteSpace: 'pre-line'
-                  }}
-                >
-                  {placeholderWarning}
-                  <div
-                    style={{
-                      backgroundColor: '#fefefe',
-                      border: '1px solid #ddd',
-                      padding: '0.5rem',
-                      borderRadius: '0.25rem',
-                      marginTop: '0.5rem',
-                      display: 'inline-flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <code style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                      {removalHintText}
-                    </code>
-                    <button
-                      onClick={handleCopyHint}
-                      style={{
-                        marginLeft: '0.5rem',
-                        padding: '0.25rem 0.5rem',
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        backgroundColor: '#D97757',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '0.25rem'
-                      }}
-                    >
-                      Copy
-                    </button>
-                    {hintCopied && (
-                      <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#16a34a' }}>
-                        Copied!
-                      </span>
+                <div className="editor-canvas" style={{ height: '400px' }}>
+                  <textarea
+                    value={code}
+                    placeholder="Paste your React component or HTML code here…"
+                    onChange={(event) => setCode(event.target.value)}
+                    className="code-editor"
+                    aria-label="React or HTML source code editor"
+                    style={{ height: '100%', width: '100%' }}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="editor-footer">
+                <div className="editor-footer__stat">
+                  <History size={14} aria-hidden="true" />
+                  <span>{lineCount} lines</span>
+                </div>
+                <div className="editor-footer__stat">
+                  <Sparkles size={14} aria-hidden="true" />
+                  <span>{characterCount} characters</span>
+                </div>
+              </CardFooter>
+            </Card>
+
+            {error ? (
+              <Alert variant="destructive" className="app-card alert-card">
+                <AlertCircle size={18} aria-hidden="true" />
+                <div>
+                  <AlertTitle>{error.message}</AlertTitle>
+                  {error.context ? (
+                    <AlertDescription>{error.context}</AlertDescription>
+                  ) : null}
+                </div>
+              </Alert>
+            ) : null}
+
+          </div>
+        </section>
+
+        <section className="app-column preview-column">
+          <div className="column-scroll">
+            <Card className="app-card preview-card">
+              <CardHeader>
+                <div className="preview-header">
+                  <div>
+                    <CardTitle>Live preview</CardTitle>
+                    {executionResult && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Detected: {executionResult.codeType === 'html' ? 'HTML' : 'React Component'}
+                        {executionResult.codeType === 'react' && executionResult.componentName && 
+                          ` (${executionResult.componentName})`}
+                      </p>
                     )}
                   </div>
                 </div>
-              )}
-              <div
-                style={{
-                  height: 'calc(100vh - 320px)',
-                  position: 'relative',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  overflow: 'hidden',
-                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                  flex: 1
-                }}
-              >
-                <textarea
-                  ref={textareaRef}
-                  value={code}
-                  onChange={(e) => {
-                    setCode(e.target.value);
-                    setError(null);
-                    setPlaceholderWarning(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    padding: '1rem',
-                    fontSize: '0.875rem',
-                    fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Consolas, Liberation Mono, Menlo, monospace',
-                    border: 'none',
-                    resize: 'none',
-                    outline: 'none',
-                    overflowY: 'auto',
-                    lineHeight: 1.6
-                  }}
-                  spellCheck={false}
-                  placeholder="Paste your Claude artifact React component code here..."
-                />
-              </div>
-              {error && (
-                <div
-                  style={{
-                    marginTop: '1rem',
-                    color: '#e53e3e',
-                    padding: '0.75rem',
-                    border: '1px solid #fed7d7',
-                    borderRadius: '0.375rem',
-                    backgroundColor: '#fff5f5',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  {error}
+              </CardHeader>
+              <CardContent className="preview-card__content">
+                <div className="preview-pane">
+                  <iframe
+                    title="Component preview"
+                    ref={previewFrameRef}
+                    className="preview-frame"
+                    srcDoc={previewDocumentMarkup}
+                  />
                 </div>
-              )}
-              <div
-                style={{
-                  marginTop: '1rem',
-                  display: 'flex',
-                  gap: '0.5rem',
-                  flexWrap: 'wrap'
-                }}
-              >
-                <button
+              </CardContent>
+              <CardFooter className="preview-footer">
+                <div className="preview-actions">
+                <Button
+                  size="sm"
                   onClick={handlePrint}
-                  disabled={!!error || !currentComponent}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    backgroundColor: !error && currentComponent ? '#D97757' : '#e2e8f0',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.375rem',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    cursor: !error && currentComponent ? 'pointer' : 'not-allowed',
-                    transition: 'background-color 0.2s ease-in-out',
-                    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!error && currentComponent) {
-                      e.currentTarget.style.backgroundColor = '#C65D3D';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!error && currentComponent) {
-                      e.currentTarget.style.backgroundColor = '#D97757';
-                    }
-                  }}
+                  disabled={!component || status !== "ready" || isPrinting}
                 >
-                  Download as PDF
-                </button>
+                  <FileDown size={14} aria-hidden="true" />
+                  {isPrinting ? "Preparing…" : "Export PDF"}
+                </Button>
               </div>
-            </div>
-            <div
-              className={`resize-handle ${isDragging ? 'active' : ''}`}
-              onMouseDown={handleMouseDown}
-              style={{
-                width: '8px',
-                backgroundColor: isDragging ? '#94a3b8' : '#e2e8f0',
-                cursor: 'col-resize',
-                margin: '0 -4px',
-                position: 'relative',
-                zIndex: 10,
-                transition: 'background-color 0.2s'
-              }}
-            />
-            <div
-              className="right-panel"
-              style={{
-                width: `${100 - leftPanelWidth}%`,
-                minWidth: '350px'
-              }}
-            >
-              <h2 className="genvise-section-title" style={{ margin: '0 0 1rem', fontSize: '1.5rem', fontWeight: 600 }}>
-                Component Preview
-              </h2>
-              <div
-                className="genvise-preview-container"
-                style={{
-                  height: 'calc(100vh - 240px)',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  overflow: 'auto',
-                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-                }}
-              >
-                <div
-                  ref={codePreviewRef}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    padding: '20px' // Add some padding for the preview
-                  }}
-                />
-              </div>
-            </div>
-          </main>
-          {/* Our custom app footer */}
-          <div
-            className="genvise-app-footer"
-            style={{
-              marginTop: 'auto',
-              padding: '1rem',
-              textAlign: 'center',
-              borderTop: '1px solid #e2e8f0',
-              backgroundColor: 'white',
-              fontSize: '0.875rem',
-              flexShrink: 0
-            }}
-          >
-            <p style={{ margin: 0 }}>
-              Powered by{' '}
-              <a
-                href="https://www.genvise.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: '#D97757',
-                  textDecoration: 'none',
-                  fontWeight: 500
-                }}
-              >
-                Genvise
-              </a>
-            </p>
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem' }}>
-              Your code and outputs are never stored or processed on our servers and remain solely on your computer.{' '}
-              <Link 
-                to="/privacy" 
-                style={{
-                  color: '#D97757',
-                  textDecoration: 'underline',
-                  fontWeight: 500
-                }}
-              >
-                Privacy Policy
-              </Link>
-            </p>
+              </CardFooter>
+            </Card>
           </div>
-        </>
-      )}
-      {/* Hidden print container */}
-      <div
-        id="print-container"
-        ref={componentRef}
-        style={{
-          width: '100%',
-          minHeight: '100vh',
-          padding: '1.5rem',
-          backgroundColor: 'white',
-          position: 'absolute',
-          left: '-9999px',
-          top: 0,
-          visibility: 'hidden'
-        }}
-      >
-        {/* The user's component for printing */}
-      </div>
+        </section>
+      </main>
+
+      <iframe
+        title="Print surface"
+        ref={printFrameRef}
+        className="print-surface"
+        srcDoc={printDocumentMarkup}
+      />
     </div>
   );
 }
+
 export default App;

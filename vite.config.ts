@@ -9,5 +9,12 @@ export default defineConfig({
       '@/components': '/components',
       '@/lib': '/lib'
     }
+  },
+  optimizeDeps: {
+    include: [
+      '@twind/core',
+      '@twind/preset-tailwind',
+      '@twind/preset-autoprefix',
+    ],
   }
 })
