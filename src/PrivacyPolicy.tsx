@@ -112,7 +112,7 @@ function PrivacyPolicy() {
             color: '#4b5563',
             marginBottom: '1rem'
           }}>
-            The Claude Artifact to PDF Converter is designed with your privacy in mind. We believe in complete transparency about how our tool works and handles your data.
+            The React to PDF Converter is designed with your privacy in mind. We believe in complete transparency about how our tool works and handles your data.
           </p>
         </section>
 
