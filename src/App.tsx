@@ -1097,7 +1097,10 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header__row">
-          <h1 className="app-header__headline">React & HTML Artifact Studio</h1>
+          <h1 className="app-header__headline">
+            <img src="/favicon.png" alt="" className="app-header__icon" />
+            Download AI Canvas/Artefact visualisations to PDFs
+          </h1>
           <p className="app-header__subtitle">
           </p>
         </div>
